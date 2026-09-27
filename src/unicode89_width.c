@@ -1,18 +1,18 @@
-/* u89_width.c - terminal display width and Unicode-whitespace word wrap. */
+/* unicode89_width.c - terminal display width and Unicode-whitespace word wrap. */
 
-#include "../include/u89.h"
-#include "u89_priv.h"
-#include <u89/width.h>
+#include "../include/unicode89.h"
+#include "unicode89_priv.h"
+#include <unicode89/width.h>
 
 /* Probe sorted, non-overlapping width ranges. Returns 0 to continue, 2 when
    cp precedes range i (stop scanning), or the width type plus 3 when cp lies
    in range i. */
-static int width_probe(const u89_priv_wrange *t, size_t i, u89_cp cp);
+static int width_probe(const unicode89_priv_wrange *t, size_t i, unicode89_cp cp);
 
-static int width_probe(const u89_priv_wrange *t, size_t i, u89_cp cp)
+static int width_probe(const unicode89_priv_wrange *t, size_t i, unicode89_cp cp)
 {
-    u89_cp lo;
-    u89_cp hi;
+    unicode89_cp lo;
+    unicode89_cp hi;
 
     lo = t[i].lo;
     if (cp < lo)
@@ -27,14 +27,14 @@ static int width_probe(const u89_priv_wrange *t, size_t i, u89_cp cp)
     return t[i].type + 3;
 }
 
-static int width_type_at(u89_cp cp)
+static int width_type_at(unicode89_cp cp)
 {
     size_t i;
     int code;
 
-    for (i = 0; i < u89_priv_width_count; ++i)
+    for (i = 0; i < unicode89_priv_width_count; ++i)
     {
-        code = width_probe(u89_priv_width_ranges, i, cp);
+        code = width_probe(unicode89_priv_width_ranges, i, cp);
         if (code == 2)
         {
             return 4;
@@ -47,12 +47,12 @@ static int width_type_at(u89_cp cp)
     return 4;
 }
 
-int u89_width(u89_cp cp, u89_width_ambig a)
+int unicode89_width(unicode89_cp cp, unicode89_width_ambig a)
 {
     int sc;
     int t;
 
-    sc = u89_is_scalar(cp);
+    sc = unicode89_is_scalar(cp);
     if (!sc)
     {
         return -1;
@@ -72,7 +72,7 @@ int u89_width(u89_cp cp, u89_width_ambig a)
     }
     if (t == 3)
     {
-        if (a == U89_WIDTH_AMBIG_WIDE)
+        if (a == UNICODE89_WIDTH_AMBIG_WIDE)
         {
             return 2;
         }
@@ -82,11 +82,11 @@ int u89_width(u89_cp cp, u89_width_ambig a)
 }
 
 /* Display width of cp in cells, clamping control/unprintable scalars to 0. */
-static int cp_disp_width(u89_cp cp, u89_width_ambig a)
+static int cp_disp_width(unicode89_cp cp, unicode89_width_ambig a)
 {
     int w;
 
-    w = u89_width(cp, a);
+    w = unicode89_width(cp, a);
     if (w < 0)
     {
         w = 0;
@@ -98,25 +98,25 @@ static int cp_disp_width(u89_cp cp, u89_width_ambig a)
    length to *i. Returns 1 when a printable non-whitespace scalar was consumed;
    returns 0 at end of input, on whitespace, or on a control, leaving *i and
    *w unchanged. */
-static int word_next(const unsigned char *s, size_t n, u89_width_ambig a,
+static int word_next(const unsigned char *s, size_t n, unicode89_width_ambig a,
                      size_t *i, int *w)
 {
     size_t next;
-    u89_status st;
+    unicode89_status st;
     int ws;
     int cw;
-    u89_cp cp;
+    unicode89_cp cp;
 
     if (*i >= n)
     {
         return 0;
     }
-    st = u89_utf8_decode(s, n, *i, &cp, &next);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, *i, &cp, &next);
+    if (st != UNICODE89_OK)
     {
         return 0;
     }
-    ws = u89_width_is_whitespace(cp);
+    ws = unicode89_width_is_whitespace(cp);
     if (ws)
     {
         return 0;
@@ -129,7 +129,7 @@ static int word_next(const unsigned char *s, size_t n, u89_width_ambig a,
 
 /* Measure the maximal non-whitespace run at s. Stores its byte length in
  *byte_len and its display width in *width. */
-static void word_measure(const unsigned char *s, size_t n, u89_width_ambig a,
+static void word_measure(const unsigned char *s, size_t n, unicode89_width_ambig a,
                          size_t *byte_len, int *width)
 {
     size_t i;
@@ -175,7 +175,7 @@ static void apply_break(size_t *breaks, size_t cap, size_t i, size_t *break_i,
 }
 
 /* Consume a single whitespace scalar of width cp_disp_width(cp). */
-static void ws_advance(u89_cp cp, size_t next, u89_width_ambig a, size_t *i,
+static void ws_advance(unicode89_cp cp, size_t next, unicode89_width_ambig a, size_t *i,
                        int *col)
 {
     int w;
@@ -189,23 +189,23 @@ static void ws_advance(u89_cp cp, size_t next, u89_width_ambig a, size_t *i,
    non-whitespace word. Records a break before an overflowing word. Returns 1
    while input remains, 0 at end of input or on malformed UTF-8. */
 static int wrap_step(const unsigned char *s, size_t n, int max_cols,
-                     u89_width_ambig a, size_t *breaks, size_t cap, size_t *i,
+                     unicode89_width_ambig a, size_t *breaks, size_t cap, size_t *i,
                      size_t *break_i, int *col)
 {
     size_t next;
-    u89_status st;
+    unicode89_status st;
     int ws;
     int ww;
     int emit;
     size_t wlen;
-    u89_cp cp;
+    unicode89_cp cp;
 
-    st = u89_utf8_decode(s, n, *i, &cp, &next);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, *i, &cp, &next);
+    if (st != UNICODE89_OK)
     {
         return 0;
     }
-    ws = u89_width_is_whitespace(cp);
+    ws = unicode89_width_is_whitespace(cp);
     if (ws)
     {
         ws_advance(cp, next, a, i, col);
@@ -222,8 +222,8 @@ static int wrap_step(const unsigned char *s, size_t n, int max_cols,
     return 1;
 }
 
-int u89_width_wrap(const unsigned char *s, size_t n, int max_cols,
-                   u89_width_ambig a, size_t *breaks, size_t cap)
+int unicode89_width_wrap(const unsigned char *s, size_t n, int max_cols,
+                   unicode89_width_ambig a, size_t *breaks, size_t cap)
 {
     size_t i;
     size_t break_i;

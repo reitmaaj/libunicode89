@@ -1,8 +1,8 @@
-# libu89 — validating Unicode for the green profile
+# libunicode89 — validating Unicode for the green profile
 
 ## Purpose
 
-`libu89` is a self-contained, dependency-free Unicode library that compiles
+`libunicode89` is a self-contained, dependency-free Unicode library that compiles
 warning-clean as **strict ISO C89 AND strict C23**, under both GCC and Clang,
 plus the `green` semantic checks and the canonical Allman format (verified by
 the sibling `green` toolchain: `just check`). It is alloc-free and provides

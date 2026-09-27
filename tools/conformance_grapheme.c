@@ -1,5 +1,5 @@
 /* conformance_grapheme.c - run the Unicode 17.0.0 GraphemeBreakTest.txt suite
-   against libu89 extended grapheme cluster boundaries. Usage:
+   against libunicode89 extended grapheme cluster boundaries. Usage:
      conformance_grapheme <path/to/GraphemeBreakTest.txt>
    Every row is checked four ways: boundary predicate, forward traversal,
    backward traversal, and the prev(next(p)) == p inverse relation.
@@ -9,14 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "u89.h"
-#include <u89/grapheme.h>
+#include "unicode89.h"
+#include <unicode89/grapheme.h>
 
 #define MAX_TOK 1024
 #define MAX_CP 512
 #define MAX_BYTES 4096
 
-static u89_cp cps[MAX_CP];
+static unicode89_cp cps[MAX_CP];
 static unsigned char data[MAX_BYTES];
 static size_t starts[MAX_CP];
 static int brk[MAX_CP];
@@ -50,7 +50,7 @@ static int check_line(const char *line)
     size_t k;
     int end_break;
     int pass;
-    u89_cp cp;
+    unicode89_cp cp;
     int len;
 
     strncpy(buf, line, sizeof buf - 1);
@@ -90,10 +90,10 @@ static int check_line(const char *line)
         {
             return -1;
         }
-        cp = (u89_cp)strtoul(h, NULL, 16);
+        cp = (unicode89_cp)strtoul(h, NULL, 16);
         starts[ncps] = nbytes;
         brk[ncps] = is_div(m);
-        len = u89_utf8_encode(cp, data + nbytes);
+        len = unicode89_utf8_encode(cp, data + nbytes);
         if (len == 0)
         {
             return -1;
@@ -131,7 +131,7 @@ static int check_line(const char *line)
     pass = 1;
     for (i = 0; i < nb; i++)
     {
-        if (!u89_grapheme_boundary(data, nbytes, bounds[i]))
+        if (!unicode89_grapheme_boundary(data, nbytes, bounds[i]))
         {
             pass = 0;
         }
@@ -142,7 +142,7 @@ static int check_line(const char *line)
         {
             continue;
         }
-        if (u89_grapheme_boundary(data, nbytes, starts[i]))
+        if (unicode89_grapheme_boundary(data, nbytes, starts[i]))
         {
             pass = 0;
         }
@@ -161,7 +161,7 @@ static int check_line(const char *line)
         }
         if (!at_start)
         {
-            if (u89_grapheme_boundary(data, nbytes, i))
+            if (unicode89_grapheme_boundary(data, nbytes, i))
             {
                 pass = 0;
             }
@@ -172,7 +172,7 @@ static int check_line(const char *line)
     k = 0;
     while (p < nbytes)
     {
-        q = u89_grapheme_next(data, nbytes, p);
+        q = unicode89_grapheme_next(data, nbytes, p);
         if (q <= p || q > nbytes)
         {
             pass = 0;
@@ -195,7 +195,7 @@ static int check_line(const char *line)
     k = nb - 1;
     while (p > 0)
     {
-        q = u89_grapheme_prev(data, nbytes, p);
+        q = unicode89_grapheme_prev(data, nbytes, p);
         if (q >= p)
         {
             pass = 0;
@@ -216,7 +216,7 @@ static int check_line(const char *line)
 
     for (i = 1; i < nb; i++)
     {
-        if (u89_grapheme_prev(data, nbytes, bounds[i]) != bounds[i - 1])
+        if (unicode89_grapheme_prev(data, nbytes, bounds[i]) != bounds[i - 1])
         {
             pass = 0;
         }

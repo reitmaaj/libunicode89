@@ -1,15 +1,15 @@
-/* u89_id.c - UAX #31 ID_Start / ID_Continue predicates. */
+/* unicode89_id.c - UAX #31 ID_Start / ID_Continue predicates. */
 
-#include "../include/u89.h"
-#include "u89_priv.h"
-#include <u89/identifier.h>
+#include "../include/unicode89.h"
+#include "unicode89_priv.h"
+#include <unicode89/identifier.h>
 
 /* Probe sorted, non-overlapping ranges. Returns 1 when cp lies in range i,
    2 when cp precedes range i (stop), otherwise 0 (continue). */
-static int range_probe(const u89_priv_range *t, size_t i, u89_cp cp)
+static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp)
 {
-    u89_cp tlo;
-    u89_cp thi;
+    unicode89_cp tlo;
+    unicode89_cp thi;
 
     tlo = t[i].lo;
     if (cp < tlo)
@@ -24,7 +24,7 @@ static int range_probe(const u89_priv_range *t, size_t i, u89_cp cp)
     return 0;
 }
 
-static int in_ranges(const u89_priv_range *t, size_t n, u89_cp cp)
+static int in_ranges(const unicode89_priv_range *t, size_t n, unicode89_cp cp)
 {
     size_t i;
     int st;
@@ -44,30 +44,30 @@ static int in_ranges(const u89_priv_range *t, size_t n, u89_cp cp)
     return 0;
 }
 
-int u89_identifier_id_start(u89_cp cp)
+int unicode89_identifier_id_start(unicode89_cp cp)
 {
     int sc;
     int r;
 
-    sc = u89_is_scalar(cp);
+    sc = unicode89_is_scalar(cp);
     if (!sc)
     {
         return 0;
     }
-    r = in_ranges(u89_priv_id_start_ranges, u89_priv_id_start_count, cp);
+    r = in_ranges(unicode89_priv_id_start_ranges, unicode89_priv_id_start_count, cp);
     return r;
 }
 
-int u89_identifier_id_continue(u89_cp cp)
+int unicode89_identifier_id_continue(unicode89_cp cp)
 {
     int sc;
     int r;
 
-    sc = u89_is_scalar(cp);
+    sc = unicode89_is_scalar(cp);
     if (!sc)
     {
         return 0;
     }
-    r = in_ranges(u89_priv_id_cont_ranges, u89_priv_id_cont_count, cp);
+    r = in_ranges(unicode89_priv_id_cont_ranges, unicode89_priv_id_cont_count, cp);
     return r;
 }

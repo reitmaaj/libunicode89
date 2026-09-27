@@ -1,4 +1,4 @@
-# libu89 acceptance tests — extended grapheme clusters (UAX #29)
+# libunicode89 acceptance tests — extended grapheme clusters (UAX #29)
 
 ## 0003 — Unacceptable behavior (must reject / fail safely)
 
@@ -13,10 +13,10 @@
 ## 0004 — Required behavior (must exhibit)
 
 - GR-01. Every boundary in the pinned `GraphemeBreakTest.txt` corpus is
-  reported by `u89_grapheme_boundary()`.
-- GR-02. Repeated `u89_grapheme_next()` from 0 yields exactly the official
+  reported by `unicode89_grapheme_boundary()`.
+- GR-02. Repeated `unicode89_grapheme_next()` from 0 yields exactly the official
   boundaries.
-- GR-03. Repeated `u89_grapheme_prev()` from `n` yields the same boundaries
+- GR-03. Repeated `unicode89_grapheme_prev()` from `n` yields the same boundaries
   in reverse.
 - GR-04. For every boundary `p`, `prev(next(p)) == p`; for every internal
   boundary, the forward and backward traversals agree.

@@ -4,8 +4,8 @@
 extern int failures;
 extern int checks;
 
-void u89_check(int cond, const char *what);
-void u89_check_ctx(int cond, const char *what, const char *ctx);
+void unicode89_check(int cond, const char *what);
+void unicode89_check_ctx(int cond, const char *what, const char *ctx);
 
 void test_utf8(void);
 void test_grapheme(void);

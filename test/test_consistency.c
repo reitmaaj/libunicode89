@@ -1,18 +1,18 @@
 #include <string.h>
 #include "test.h"
-#include "u89.h"
-#include <u89/identifier.h>
-#include <u89/normalize.h>
-#include <u89/width.h>
+#include "unicode89.h"
+#include <unicode89/identifier.h>
+#include <unicode89/normalize.h>
+#include <unicode89/width.h>
 
 static unsigned char a[512];
 static unsigned char b[512];
 static unsigned char c[512];
-static u89_cp work[1024];
+static unicode89_cp work[1024];
 
 static int norm(int mode, const unsigned char *s, size_t n, unsigned char *o)
 {
-    return u89_normalize_ex(mode, s, n, o, sizeof a, work, 1024);
+    return unicode89_normalize_ex(mode, s, n, o, sizeof a, work, 1024);
 }
 
 static int eq(const unsigned char *x, size_t xn, const unsigned char *y,
@@ -32,7 +32,7 @@ static void check_idempotent(int mode, const unsigned char *s, size_t n)
 
     l1 = norm(mode, s, n, a);
     l2 = norm(mode, a, (size_t)l1, b);
-    u89_check_ctx(l1 == l2 && eq(a, (size_t)l1, b, (size_t)l2),
+    unicode89_check_ctx(l1 == l2 && eq(a, (size_t)l1, b, (size_t)l2),
                   "normalization idempotent", "x");
 }
 
@@ -47,12 +47,12 @@ static void check_canonical(const unsigned char *s, size_t n)
     lc = norm(0, s, n, a);              /* NFC(x) */
     ln = norm(1, a, (size_t)lc, b);     /* NFD(NFC(x)) */
     lc2 = norm(0, b, (size_t)ln, c);    /* NFC(NFD(NFC(x))) */
-    u89_check_ctx(lc2 == lc && eq(c, (size_t)lc2, a, (size_t)lc),
+    unicode89_check_ctx(lc2 == lc && eq(c, (size_t)lc2, a, (size_t)lc),
                   "NFC(NFD(NFC(x))) == NFC(x)", "x");
 
     ln2 = norm(1, s, n, b);             /* NFD(x) */
     lc2 = norm(0, b, (size_t)ln2, c);   /* NFC(NFD(x)) */
-    u89_check_ctx(lc2 == lc && eq(c, (size_t)lc2, a, (size_t)lc),
+    unicode89_check_ctx(lc2 == lc && eq(c, (size_t)lc2, a, (size_t)lc),
                   "NFC(NFD(x)) == NFC(x)", "x");
 }
 
@@ -63,30 +63,30 @@ static void check_compat_folds(void)
     {
         static const unsigned char fullwidth_1[] = { 0xEF, 0xBC, 0x91 }; /* １ */
         static const unsigned char one[] = { 0x31 };
-        u89_check(norm(2, fullwidth_1, 3, a) == 1, "NFKC fullwidth １ -> 1");
-        u89_check(eq(a, 1, one, 1), "NFKC fullwidth value");
-        u89_check(norm(3, fullwidth_1, 3, a) == 1, "NFKD fullwidth １ -> 1");
+        unicode89_check(norm(2, fullwidth_1, 3, a) == 1, "NFKC fullwidth １ -> 1");
+        unicode89_check(eq(a, 1, one, 1), "NFKC fullwidth value");
+        unicode89_check(norm(3, fullwidth_1, 3, a) == 1, "NFKD fullwidth １ -> 1");
     }
     {
         static const unsigned char nbsp[] = { 0xC2, 0xA0 };
         static const unsigned char sp[] = { 0x20 };
-        u89_check(norm(2, nbsp, 2, a) == 1, "NFKC NBSP -> space");
-        u89_check(eq(a, 1, sp, 1), "NFKC NBSP value");
-        u89_check(norm(1, nbsp, 2, a) == 2, "NFD keeps NBSP");
+        unicode89_check(norm(2, nbsp, 2, a) == 1, "NFKC NBSP -> space");
+        unicode89_check(eq(a, 1, sp, 1), "NFKC NBSP value");
+        unicode89_check(norm(1, nbsp, 2, a) == 2, "NFD keeps NBSP");
     }
 }
 
 /* XID_Start is a subset of XID_Continue */
 static void check_xid_subset(void)
 {
-    u89_cp cp;
+    unicode89_cp cp;
 
     for (cp = 0; cp <= 0x10FFFF; cp++) {
         if (cp >= 0xD800 && cp <= 0xDFFF) {
             continue;
         }
-        if (u89_identifier_xid_start(cp)) {
-            u89_check_ctx(u89_identifier_xid_continue(cp), "XID_Start subset Continue",
+        if (unicode89_identifier_xid_start(cp)) {
+            unicode89_check_ctx(unicode89_identifier_xid_continue(cp), "XID_Start subset Continue",
                           "cp");
         }
     }
@@ -96,9 +96,9 @@ static void check_xid_subset(void)
 static void check_roundtrip(void)
 {
     unsigned char buf[8];
-    u89_cp cp;
-    u89_cp back;
-    u89_status st;
+    unicode89_cp cp;
+    unicode89_cp back;
+    unicode89_status st;
     size_t next;
     int len;
 
@@ -106,20 +106,20 @@ static void check_roundtrip(void)
         if (cp >= 0xD800 && cp <= 0xDFFF) {
             continue;
         }
-        len = u89_utf8_encode(cp, buf);
+        len = unicode89_utf8_encode(cp, buf);
         if (len == 0) {
-            u89_check_ctx(0, "encode scalar nonzero", "cp");
+            unicode89_check_ctx(0, "encode scalar nonzero", "cp");
             continue;
         }
         back = 0;
         next = 0;
-        st = u89_utf8_decode(buf, (size_t)len, 0, &back, &next);
-        if (st != U89_OK || next != (size_t)len || back != cp) {
-            u89_check_ctx(0, "roundtrip", "cp");
+        st = unicode89_utf8_decode(buf, (size_t)len, 0, &back, &next);
+        if (st != UNICODE89_OK || next != (size_t)len || back != cp) {
+            unicode89_check_ctx(0, "roundtrip", "cp");
             break;
         }
-        if (u89_utf8_len(cp) != len) {
-            u89_check_ctx(0, "utf8_len == encode len", "cp");
+        if (unicode89_utf8_len(cp) != len) {
+            unicode89_check_ctx(0, "utf8_len == encode len", "cp");
             break;
         }
     }
@@ -135,41 +135,41 @@ static void check_compat_idempotent(void)
 
     l1 = norm(2, hw_ka, 3, a);
     l2 = norm(2, a, (size_t)l1, b);
-    u89_check_ctx(l1 == l2 && eq(a, (size_t)l1, b, (size_t)l2),
+    unicode89_check_ctx(l1 == l2 && eq(a, (size_t)l1, b, (size_t)l2),
                   "NFKC idempotent", "hw_ka");
-    u89_check_ctx(l1 == 3 && eq(a, 3, fw_ka, 3),
+    unicode89_check_ctx(l1 == 3 && eq(a, 3, fw_ka, 3),
                   "NFKC halfwidth katakana -> fullwidth", "hw_ka");
 
     l1 = norm(3, hw_ka, 3, a);
     l2 = norm(3, a, (size_t)l1, b);
-    u89_check_ctx(l1 == l2 && eq(a, (size_t)l1, b, (size_t)l2),
+    unicode89_check_ctx(l1 == l2 && eq(a, (size_t)l1, b, (size_t)l2),
                   "NFKD idempotent", "hw_ka");
 }
 
 /* every Hangul syllable: NFD -> 2/3 jamo, and NFC(NFD(syl)) == syl */
 static void check_hangul_roundtrip(void)
 {
-    u89_cp s;
+    unicode89_cp s;
     unsigned char buf[8];
     int len;
     int dn;
     int rn;
 
     for (s = 0xAC00; s <= 0xD7A3; s += 17) {
-        u89_cp idx;
+        unicode89_cp idx;
         int expect;
 
         idx = s - 0xAC00;
         expect = (idx % 28 == 0) ? 6 : 9;
-        len = u89_utf8_encode(s, buf);
+        len = unicode89_utf8_encode(s, buf);
         dn = norm(1, buf, (size_t)len, a);        /* NFD */
         if (dn != expect) {
-            u89_check_ctx(0, "hangul NFD size", "s");
+            unicode89_check_ctx(0, "hangul NFD size", "s");
             continue;
         }
         rn = norm(0, a, (size_t)dn, b);            /* NFC(NFD) */
         if (rn != len || !eq(b, (size_t)rn, buf, (size_t)len)) {
-            u89_check_ctx(0, "hangul NFC(NFD) roundtrip", "s");
+            unicode89_check_ctx(0, "hangul NFC(NFD) roundtrip", "s");
         }
     }
 }
@@ -181,34 +181,34 @@ static void check_utf16_pair_roundtrip(void)
                                        0xD83DU };
     static const unsigned int lo[] = { 0xDC00U, 0xDFFFU, 0xDC00U, 0xDFFFU,
                                        0xDE00U };
-    static const u89_cp want[] = { 0x10000UL, 0x103FFUL, 0x10FC00UL,
+    static const unicode89_cp want[] = { 0x10000UL, 0x103FFUL, 0x10FC00UL,
                                    0x10FFFFUL, 0x1F600UL };
     unsigned char buf[8];
-    u89_cp cp;
-    u89_cp back;
-    u89_status st;
+    unicode89_cp cp;
+    unicode89_cp back;
+    unicode89_status st;
     size_t next;
     int len;
     int i;
 
     for (i = 0; i < 5; i++) {
         cp = 0;
-        if (u89_utf16_decode_pair(hi[i], lo[i], &cp) != 1) {
-            u89_check_ctx(0, "pair decodes", "pair");
+        if (unicode89_utf16_decode_pair(hi[i], lo[i], &cp) != 1) {
+            unicode89_check_ctx(0, "pair decodes", "pair");
             continue;
         }
         if (cp != want[i]) {
-            u89_check_ctx(0, "pair scalar value", "pair");
+            unicode89_check_ctx(0, "pair scalar value", "pair");
             continue;
         }
-        u89_check_ctx(u89_utf16_units(cp) == 2, "pair scalar is 2 units",
+        unicode89_check_ctx(unicode89_utf16_units(cp) == 2, "pair scalar is 2 units",
                       "pair");
-        len = u89_utf8_encode(cp, buf);
-        u89_check_ctx(len == 4, "pair scalar encodes to 4 bytes", "pair");
+        len = unicode89_utf8_encode(cp, buf);
+        unicode89_check_ctx(len == 4, "pair scalar encodes to 4 bytes", "pair");
         back = 0;
         next = 0;
-        st = u89_utf8_decode(buf, (size_t)len, 0, &back, &next);
-        u89_check_ctx(st == U89_OK && next == (size_t)len && back == cp,
+        st = unicode89_utf8_decode(buf, (size_t)len, 0, &back, &next);
+        unicode89_check_ctx(st == UNICODE89_OK && next == (size_t)len && back == cp,
                       "pair scalar round-trips", "pair");
     }
 }
@@ -216,15 +216,15 @@ static void check_utf16_pair_roundtrip(void)
 /* width is 0,1,2 for all printable scalars, and -1 only for control/non-scalar */
 static void check_width_consistency(void)
 {
-    u89_cp cp;
+    unicode89_cp cp;
     int w;
 
     for (cp = 0x20; cp < 0xD800; cp += 97) {
-        w = u89_width(cp, U89_WIDTH_AMBIG_NARROW);
+        w = unicode89_width(cp, UNICODE89_WIDTH_AMBIG_NARROW);
         if (w < 0) {
-            u89_check_ctx(w == -1, "width -1 only for control", "cp");
+            unicode89_check_ctx(w == -1, "width -1 only for control", "cp");
         } else {
-            u89_check_ctx(w >= 0 && w <= 2, "width in 0..2", "cp");
+            unicode89_check_ctx(w >= 0 && w <= 2, "width in 0..2", "cp");
         }
     }
 }

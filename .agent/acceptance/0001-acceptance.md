@@ -1,4 +1,4 @@
-# libu89 acceptance tests
+# libunicode89 acceptance tests
 
 ## 0001 — Unacceptable behavior (must reject / fail safely)
 

@@ -1,4 +1,4 @@
-/* u89_grapheme.c - UAX #29 extended grapheme cluster boundaries.
+/* unicode89_grapheme.c - UAX #29 extended grapheme cluster boundaries.
  *
  * The forward scan and the backward candidate scan share the same basic
  * pair rules (GB3..GB9b, GB999). GB9c (Indic conjuncts), GB11 (emoji ZWJ),
@@ -7,9 +7,9 @@
  * context jumps. No allocation is performed.
  */
 
-#include "../include/u89.h"
-#include "u89_priv.h"
-#include <u89/grapheme.h>
+#include "../include/unicode89.h"
+#include "unicode89_priv.h"
+#include <unicode89/grapheme.h>
 
 #define GCB_OTHER 0
 #define GCB_CR 1
@@ -40,7 +40,7 @@ typedef struct gc_state
 
 /* ---- Property lookup ----------------------------------------------------- */
 
-static int prop_probe(const u89_priv_prop_range *t, size_t i, u89_cp cp,
+static int prop_probe(const unicode89_priv_prop_range *t, size_t i, unicode89_cp cp,
                       unsigned short *out)
 {
     if (cp < t[i].lo)
@@ -55,8 +55,8 @@ static int prop_probe(const u89_priv_prop_range *t, size_t i, u89_cp cp,
     return 1;
 }
 
-static unsigned short prop_lookup(const u89_priv_prop_range *t, size_t n,
-                                  u89_cp cp, unsigned short dflt)
+static unsigned short prop_lookup(const unicode89_priv_prop_range *t, size_t n,
+                                  unicode89_cp cp, unsigned short dflt)
 {
     size_t i;
     int st;
@@ -78,23 +78,23 @@ static unsigned short prop_lookup(const u89_priv_prop_range *t, size_t n,
     return dflt;
 }
 
-static unsigned short gcb_at(u89_cp cp)
+static unsigned short gcb_at(unicode89_cp cp)
 {
     unsigned short v;
 
-    v = prop_lookup(u89_priv_gcb_ranges, u89_priv_gcb_count, cp, GCB_OTHER);
+    v = prop_lookup(unicode89_priv_gcb_ranges, unicode89_priv_gcb_count, cp, GCB_OTHER);
     return v;
 }
 
-static unsigned short incb_at(u89_cp cp)
+static unsigned short incb_at(unicode89_cp cp)
 {
     unsigned short v;
 
-    v = prop_lookup(u89_priv_incb_ranges, u89_priv_incb_count, cp, INCB_NONE);
+    v = prop_lookup(unicode89_priv_incb_ranges, unicode89_priv_incb_count, cp, INCB_NONE);
     return v;
 }
 
-static int range_probe(const u89_priv_range *t, size_t i, u89_cp cp)
+static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp)
 {
     if (cp < t[i].lo)
     {
@@ -107,7 +107,7 @@ static int range_probe(const u89_priv_range *t, size_t i, u89_cp cp)
     return 0;
 }
 
-static int range_member(const u89_priv_range *t, size_t n, u89_cp cp)
+static int range_member(const unicode89_priv_range *t, size_t n, unicode89_cp cp)
 {
     size_t i;
     int st;
@@ -127,11 +127,11 @@ static int range_member(const u89_priv_range *t, size_t n, u89_cp cp)
     return 0;
 }
 
-static int is_ext_pict(u89_cp cp)
+static int is_ext_pict(unicode89_cp cp)
 {
     int v;
 
-    v = range_member(u89_priv_extpict_ranges, u89_priv_extpict_count, cp);
+    v = range_member(unicode89_priv_extpict_ranges, unicode89_priv_extpict_count, cp);
     return v;
 }
 
@@ -220,7 +220,7 @@ static int hangul_no_break(unsigned short a, unsigned short b)
 }
 
 /* GB3..GB9b plus GB999: 0 when no break between prev and cur. */
-static int basic_break(u89_cp prev, u89_cp cur)
+static int basic_break(unicode89_cp prev, unicode89_cp cur)
 {
     unsigned short a;
     unsigned short b;
@@ -304,7 +304,7 @@ static unsigned char emoji_after_extend(unsigned char emoji)
     return emoji;
 }
 
-static unsigned char emoji_advance(unsigned char emoji, u89_cp cur)
+static unsigned char emoji_advance(unsigned char emoji, unicode89_cp cur)
 {
     unsigned short cls;
     unsigned char out;
@@ -340,7 +340,7 @@ static unsigned char incb_after_linker(unsigned char incb)
     return out;
 }
 
-static unsigned char incb_advance(unsigned char incb, u89_cp cur)
+static unsigned char incb_advance(unsigned char incb, unicode89_cp cur)
 {
     unsigned short ic;
     unsigned char out;
@@ -362,7 +362,7 @@ static unsigned char incb_advance(unsigned char incb, u89_cp cur)
     return out;
 }
 
-static gc_state state_init(u89_cp cp)
+static gc_state state_init(unicode89_cp cp)
 {
     gc_state st;
     unsigned short cls;
@@ -374,7 +374,7 @@ static gc_state state_init(u89_cp cp)
     return st;
 }
 
-static gc_state state_advance(gc_state st, u89_cp cur)
+static gc_state state_advance(gc_state st, unicode89_cp cur)
 {
     gc_state out;
     unsigned short cls;
@@ -386,7 +386,7 @@ static gc_state state_advance(gc_state st, u89_cp cur)
     return out;
 }
 
-static int fwd_break(u89_cp prev, const gc_state *st, u89_cp cur)
+static int fwd_break(unicode89_cp prev, const gc_state *st, unicode89_cp cur)
 {
     int br;
     int pict;
@@ -429,20 +429,20 @@ static int fwd_break(u89_cp prev, const gc_state *st, u89_cp cur)
 }
 
 /* Process one scalar. Returns 0 to continue, 1 at a break, 2 at end. */
-static int scan_step(const unsigned char *s, size_t n, size_t *i, u89_cp *prev,
+static int scan_step(const unsigned char *s, size_t n, size_t *i, unicode89_cp *prev,
                      gc_state *state)
 {
     size_t next;
-    u89_cp cur;
-    u89_status st;
+    unicode89_cp cur;
+    unicode89_status st;
     int br;
 
     if (*i >= n)
     {
         return 2;
     }
-    st = u89_utf8_decode(s, n, *i, &cur, &next);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, *i, &cur, &next);
+    if (st != UNICODE89_OK)
     {
         return 2;
     }
@@ -462,8 +462,8 @@ static size_t scan_next(const unsigned char *s, size_t n, size_t start)
 {
     size_t i;
     size_t next;
-    u89_cp prev;
-    u89_status st;
+    unicode89_cp prev;
+    unicode89_status st;
     gc_state state;
     int r;
     int go;
@@ -472,8 +472,8 @@ static size_t scan_next(const unsigned char *s, size_t n, size_t start)
     {
         return n;
     }
-    st = u89_utf8_decode(s, n, start, &prev, &next);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, start, &prev, &next);
+    if (st != UNICODE89_OK)
     {
         return n;
     }
@@ -500,19 +500,19 @@ static size_t scan_next(const unsigned char *s, size_t n, size_t start)
 
 /* One basic pair step backwards. Returns 1 when *start moved. */
 static int back_step(const unsigned char *s, size_t n, size_t *start,
-                     u89_cp *cur)
+                     unicode89_cp *cur)
 {
     size_t q;
-    u89_cp prev;
-    u89_status st;
+    unicode89_cp prev;
+    unicode89_status st;
     int br;
 
     if (*start == 0)
     {
         return 0;
     }
-    st = u89_utf8_prev(s, n, *start, &prev, &q);
-    if (st != U89_OK)
+    st = unicode89_utf8_prev(s, n, *start, &prev, &q);
+    if (st != UNICODE89_OK)
     {
         return 0;
     }
@@ -549,15 +549,15 @@ static int incb_take(size_t *i, size_t q, int *linker, unsigned short cls)
 
 /* One backward GB9c run step. Returns 1 when *i moved, 0 when the run ended
    (with *cp and *q at the scalar that stopped it). */
-static int incb_step(const unsigned char *s, size_t n, size_t *i, u89_cp *cp,
+static int incb_step(const unsigned char *s, size_t n, size_t *i, unicode89_cp *cp,
                      size_t *q, int *linker)
 {
-    u89_status st;
+    unicode89_status st;
     unsigned short cls;
     int r;
 
-    st = u89_utf8_prev(s, n, *i, cp, q);
-    if (st != U89_OK)
+    st = unicode89_utf8_prev(s, n, *i, cp, q);
+    if (st != UNICODE89_OK)
     {
         return 0;
     }
@@ -572,14 +572,14 @@ static size_t incb_jump(const unsigned char *s, size_t n, size_t start)
 {
     size_t i;
     size_t q;
-    u89_cp cp;
-    u89_status st;
+    unicode89_cp cp;
+    unicode89_status st;
     unsigned short cls;
     int linker;
     int r;
 
-    st = u89_utf8_decode(s, n, start, &cp, &q);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, start, &cp, &q);
+    if (st != UNICODE89_OK)
     {
         return start;
     }
@@ -616,13 +616,13 @@ static size_t gb11_jump(const unsigned char *s, size_t n, size_t start)
 {
     size_t i;
     size_t q;
-    u89_cp cp;
-    u89_status st;
+    unicode89_cp cp;
+    unicode89_status st;
     unsigned short cls;
     int pict;
 
-    st = u89_utf8_decode(s, n, start, &cp, &q);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, start, &cp, &q);
+    if (st != UNICODE89_OK)
     {
         return start;
     }
@@ -635,8 +635,8 @@ static size_t gb11_jump(const unsigned char *s, size_t n, size_t start)
     {
         return start;
     }
-    st = u89_utf8_prev(s, n, start, &cp, &q);
-    if (st != U89_OK)
+    st = unicode89_utf8_prev(s, n, start, &cp, &q);
+    if (st != UNICODE89_OK)
     {
         return start;
     }
@@ -648,8 +648,8 @@ static size_t gb11_jump(const unsigned char *s, size_t n, size_t start)
     i = q;
     while (i > 0)
     {
-        st = u89_utf8_prev(s, n, i, &cp, &q);
-        if (st != U89_OK)
+        st = unicode89_utf8_prev(s, n, i, &cp, &q);
+        if (st != UNICODE89_OK)
         {
             return start;
         }
@@ -691,12 +691,12 @@ static size_t ri_jump(const unsigned char *s, size_t n, size_t start)
     size_t q;
     size_t count;
     size_t first;
-    u89_cp cp;
-    u89_status st;
+    unicode89_cp cp;
+    unicode89_status st;
     unsigned short cls;
 
-    st = u89_utf8_decode(s, n, start, &cp, &q);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, start, &cp, &q);
+    if (st != UNICODE89_OK)
     {
         return start;
     }
@@ -710,8 +710,8 @@ static size_t ri_jump(const unsigned char *s, size_t n, size_t start)
     first = start;
     while (i > 0)
     {
-        st = u89_utf8_prev(s, n, i, &cp, &q);
-        if (st != U89_OK)
+        st = unicode89_utf8_prev(s, n, i, &cp, &q);
+        if (st != UNICODE89_OK)
         {
             return start;
         }
@@ -740,15 +740,15 @@ static size_t min_start(size_t a, size_t b)
 
 /* One context jump backwards. Returns 1 when *start moved. */
 static int extend_step(const unsigned char *s, size_t n, size_t *start,
-                       u89_cp *cur)
+                       unicode89_cp *cur)
 {
     size_t best;
     size_t a;
     size_t b;
     size_t c;
     size_t next;
-    u89_cp cp;
-    u89_status st;
+    unicode89_cp cp;
+    unicode89_status st;
 
     best = *start;
     a = incb_jump(s, n, *start);
@@ -761,8 +761,8 @@ static int extend_step(const unsigned char *s, size_t n, size_t *start,
     {
         return 0;
     }
-    st = u89_utf8_decode(s, n, best, &cp, &next);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, best, &cp, &next);
+    if (st != UNICODE89_OK)
     {
         return 0;
     }
@@ -773,7 +773,7 @@ static int extend_step(const unsigned char *s, size_t n, size_t *start,
 
 /* One backward move: basic pair first, then a context jump. */
 static int cluster_step(const unsigned char *s, size_t n, size_t *start,
-                        u89_cp *cur)
+                        unicode89_cp *cur)
 {
     int moved;
 
@@ -791,12 +791,12 @@ static size_t cluster_start(const unsigned char *s, size_t n, size_t p)
 {
     size_t start;
     size_t next;
-    u89_cp cur;
-    u89_status st;
+    unicode89_cp cur;
+    unicode89_status st;
     int go;
 
-    st = u89_utf8_decode(s, n, p, &cur, &next);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, p, &cur, &next);
+    if (st != UNICODE89_OK)
     {
         return p;
     }
@@ -852,7 +852,7 @@ static size_t lead_start(const unsigned char *s, size_t pos)
 
 /* ---- Public interface ---------------------------------------------------- */
 
-size_t u89_grapheme_next(const unsigned char *s, size_t n, size_t pos)
+size_t unicode89_grapheme_next(const unsigned char *s, size_t n, size_t pos)
 {
     size_t q;
     size_t c;
@@ -867,7 +867,7 @@ size_t u89_grapheme_next(const unsigned char *s, size_t n, size_t pos)
     return q;
 }
 
-size_t u89_grapheme_prev(const unsigned char *s, size_t n, size_t pos)
+size_t unicode89_grapheme_prev(const unsigned char *s, size_t n, size_t pos)
 {
     size_t q;
 
@@ -880,13 +880,13 @@ size_t u89_grapheme_prev(const unsigned char *s, size_t n, size_t pos)
     return q;
 }
 
-int u89_grapheme_boundary(const unsigned char *s, size_t n, size_t pos)
+int unicode89_grapheme_boundary(const unsigned char *s, size_t n, size_t pos)
 {
     size_t q;
     size_t c;
     size_t end;
-    u89_cp cp;
-    u89_status st;
+    unicode89_cp cp;
+    unicode89_status st;
 
     if (pos == 0)
     {
@@ -900,8 +900,8 @@ int u89_grapheme_boundary(const unsigned char *s, size_t n, size_t pos)
     {
         return 1;
     }
-    st = u89_utf8_prev(s, n, pos, &cp, &q);
-    if (st != U89_OK)
+    st = unicode89_utf8_prev(s, n, pos, &cp, &q);
+    if (st != UNICODE89_OK)
     {
         return 0;
     }

@@ -6,7 +6,7 @@
 int failures = 0;
 int checks = 0;
 
-void u89_check(int cond, const char *what)
+void unicode89_check(int cond, const char *what)
 {
     checks++;
     if (!cond) {
@@ -15,7 +15,7 @@ void u89_check(int cond, const char *what)
     }
 }
 
-void u89_check_ctx(int cond, const char *what, const char *ctx)
+void unicode89_check_ctx(int cond, const char *what, const char *ctx)
 {
     checks++;
     if (!cond) {

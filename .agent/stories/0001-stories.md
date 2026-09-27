@@ -1,4 +1,4 @@
-# libu89 stories
+# libunicode89 stories
 
 ## 0001 — The strict decoder author
 AS a developer of a decoder (wasm names, JSON keys, protocol fields),

@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "test.h"
-#include "u89.h"
-#include <u89/grapheme.h>
+#include "unicode89.h"
+#include <unicode89/grapheme.h>
 
 /* Check cluster count, forward/backward traversal, inverse relation, and the
    boundary predicate for one string. */
@@ -24,7 +24,7 @@ static void check_clusters(const unsigned char *s, size_t n, size_t want,
     p = 0;
     ok = 1;
     while (p < n && nf < 64) {
-        size_t q = u89_grapheme_next(s, n, p);
+        size_t q = unicode89_grapheme_next(s, n, p);
         if (q <= p) {
             ok = 0;
             break;
@@ -33,14 +33,14 @@ static void check_clusters(const unsigned char *s, size_t n, size_t want,
         nf++;
         p = q;
     }
-    u89_check_ctx(ok == 1 && p == n, "forward traversal reaches end", ctx);
-    u89_check_ctx(nf == want, "cluster count", ctx);
+    unicode89_check_ctx(ok == 1 && p == n, "forward traversal reaches end", ctx);
+    unicode89_check_ctx(nf == want, "cluster count", ctx);
 
     nb = 0;
     p = n;
     ok = 1;
     while (p > 0 && nb < 64) {
-        size_t q = u89_grapheme_prev(s, n, p);
+        size_t q = unicode89_grapheme_prev(s, n, p);
         if (q >= p) {
             ok = 0;
             break;
@@ -49,8 +49,8 @@ static void check_clusters(const unsigned char *s, size_t n, size_t want,
         nb++;
         p = q;
     }
-    u89_check_ctx(ok == 1 && p == 0, "backward traversal reaches start", ctx);
-    u89_check_ctx(nb == want, "cluster count backward", ctx);
+    unicode89_check_ctx(ok == 1 && p == 0, "backward traversal reaches start", ctx);
+    unicode89_check_ctx(nb == want, "cluster count backward", ctx);
 
     ok = 1;
     if (nf != nb) {
@@ -61,23 +61,23 @@ static void check_clusters(const unsigned char *s, size_t n, size_t want,
             ok = 0;
         }
     }
-    u89_check_ctx(ok == 1, "forward/backward boundaries agree", ctx);
+    unicode89_check_ctx(ok == 1, "forward/backward boundaries agree", ctx);
 
     p = 0;
     ok = 1;
     for (i = 0; i < nf; i++) {
-        if (u89_grapheme_prev(s, n, fwd[i]) != p) {
+        if (unicode89_grapheme_prev(s, n, fwd[i]) != p) {
             ok = 0;
             break;
         }
         p = fwd[i];
     }
-    u89_check_ctx(ok == 1, "prev(next(p)) == p", ctx);
+    unicode89_check_ctx(ok == 1, "prev(next(p)) == p", ctx);
 
     p = 0;
     ok = 1;
     while (p <= n) {
-        int b = u89_grapheme_boundary(s, n, p);
+        int b = unicode89_grapheme_boundary(s, n, p);
         int is_b = 0;
         if (p == 0 || p == n) {
             is_b = 1;
@@ -96,7 +96,7 @@ static void check_clusters(const unsigned char *s, size_t n, size_t want,
         }
         p++;
     }
-    u89_check_ctx(ok == 1, "boundary predicate agrees", ctx);
+    unicode89_check_ctx(ok == 1, "boundary predicate agrees", ctx);
 }
 
 static unsigned long rnd_next(unsigned long x)
@@ -108,7 +108,7 @@ static unsigned long rnd_next(unsigned long x)
 #endif
 }
 
-static const u89_cp rnd_pool[] = {
+static const unicode89_cp rnd_pool[] = {
     0x0041, 0x0020, 0x000D, 0x000A, 0x0009, 0x0301, 0x0903, 0x0600,
     0x094D, 0x0915, 0x0937, 0x200D, 0xFE0F, 0x1F468, 0x1F600, 0x1F3FB,
     0x1F1E6, 0x1F1E7, 0x1100, 0x1161, 0x11A8, 0xAC00, 0x1F6D1
@@ -138,7 +138,7 @@ static int random_case_ok(unsigned long *seed)
         int enc;
 
         *seed = rnd_next(*seed);
-        enc = u89_utf8_encode(rnd_pool[(*seed >> 13) % RND_POOL_N], s + n);
+        enc = unicode89_utf8_encode(rnd_pool[(*seed >> 13) % RND_POOL_N], s + n);
         if (enc == 0) {
             return 0;
         }
@@ -147,7 +147,7 @@ static int random_case_ok(unsigned long *seed)
     k = 0;
     p = 0;
     while (p < n) {
-        q = u89_grapheme_next(s, n, p);
+        q = unicode89_grapheme_next(s, n, p);
         if (q <= p || q > n || k >= 32) {
             return 0;
         }
@@ -162,7 +162,7 @@ static int random_case_ok(unsigned long *seed)
     p = n;
     i = 0;
     while (p > 0) {
-        q = u89_grapheme_prev(s, n, p);
+        q = unicode89_grapheme_prev(s, n, p);
         if (q >= p || i + 1 >= 32) {
             return 0;
         }
@@ -206,13 +206,13 @@ static int random_case_ok(unsigned long *seed)
                 want_prev = bounds[i];
             }
         }
-        if (u89_grapheme_boundary(s, n, p) != want) {
+        if (unicode89_grapheme_boundary(s, n, p) != want) {
             return 0;
         }
-        if (u89_grapheme_next(s, n, p) != want_next) {
+        if (unicode89_grapheme_next(s, n, p) != want_next) {
             return 0;
         }
-        if (u89_grapheme_prev(s, n, p) != want_prev) {
+        if (unicode89_grapheme_prev(s, n, p) != want_prev) {
             return 0;
         }
     }
@@ -233,7 +233,7 @@ static void check_random(void)
             break;
         }
     }
-    u89_check(ok == 1, "randomized traversal invariants");
+    unicode89_check(ok == 1, "randomized traversal invariants");
 }
 
 void test_grapheme(void)
@@ -288,9 +288,9 @@ void test_grapheme(void)
     };
 
     /* GR-11/GR-12: empty and endpoint behavior */
-    u89_check(u89_grapheme_next(EMPTY, 0, 0) == 0, "empty next");
-    u89_check(u89_grapheme_prev(EMPTY, 0, 0) == 0, "empty prev");
-    u89_check(u89_grapheme_boundary(EMPTY, 0, 0) == 1, "empty boundary");
+    unicode89_check(unicode89_grapheme_next(EMPTY, 0, 0) == 0, "empty next");
+    unicode89_check(unicode89_grapheme_prev(EMPTY, 0, 0) == 0, "empty prev");
+    unicode89_check(unicode89_grapheme_boundary(EMPTY, 0, 0) == 1, "empty boundary");
     check_clusters(EMPTY, 0, 0, "empty");
 
     check_clusters(ASCII, sizeof ASCII, 3, "ascii");
@@ -319,11 +319,11 @@ void test_grapheme(void)
                    "pict extend zwj pict joins");
 
     /* Mid-scalar positions are never boundaries. */
-    u89_check(u89_grapheme_boundary(E_ACUTE, sizeof E_ACUTE, 1) == 0,
+    unicode89_check(unicode89_grapheme_boundary(E_ACUTE, sizeof E_ACUTE, 1) == 0,
               "mid-scalar not a boundary");
-    u89_check(u89_grapheme_prev(E_ACUTE, sizeof E_ACUTE, 1) == 0,
+    unicode89_check(unicode89_grapheme_prev(E_ACUTE, sizeof E_ACUTE, 1) == 0,
               "prev from mid-scalar");
-    u89_check(u89_grapheme_next(E_ACUTE, sizeof E_ACUTE, 1) == sizeof E_ACUTE,
+    unicode89_check(unicode89_grapheme_next(E_ACUTE, sizeof E_ACUTE, 1) == sizeof E_ACUTE,
               "next from mid-scalar");
 
     check_random();

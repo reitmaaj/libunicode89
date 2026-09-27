@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Independent generator oracle for libu89 property tables.
+"""Independent generator oracle for libunicode89 property tables.
 
 Parses the vendored Unicode 17.0.0 data directly (a code path independent of
 tools/gen_unicode_tables.py) to derive expected range lists, then compares them
-to the committed src/u89_priv_tables.c arrays. Exits nonzero on any mismatch.
+to the committed src/unicode89_priv_tables.c arrays. Exits nonzero on any mismatch.
 
 Usage: gen_check.py [UCD-DIR]
 """
@@ -58,8 +58,8 @@ def parse_ranges(name, prop):
 
 def read_c_ranges(name):
     """Parse '{ loUL, hiUL }' rows of const array <name>_ranges in tables.c."""
-    txt = open("src/u89_priv_tables.c", encoding="utf-8").read()
-    m = re.search(r"const u89_priv_range %s_ranges\[\] = \{(.*?)\};" % name, txt,
+    txt = open("src/unicode89_priv_tables.c", encoding="utf-8").read()
+    m = re.search(r"const unicode89_priv_range %s_ranges\[\] = \{(.*?)\};" % name, txt,
                   re.S)
     if not m:
         sys.exit("missing array " + name)
@@ -70,12 +70,12 @@ def read_c_ranges(name):
 
 
 def read_gc_ranges():
-    return read_prop_ranges("u89_priv_gc")
+    return read_prop_ranges("unicode89_priv_gc")
 
 
 def read_prop_ranges(name):
-    txt = open("src/u89_priv_tables.c", encoding="utf-8").read()
-    m = re.search(r"const u89_priv_prop_range %s_ranges\[\] = \{(.*?)\};" % name,
+    txt = open("src/unicode89_priv_tables.c", encoding="utf-8").read()
+    m = re.search(r"const unicode89_priv_prop_range %s_ranges\[\] = \{(.*?)\};" % name,
                   txt, re.S)
     if not m:
         sys.exit("missing array " + name)
@@ -227,14 +227,14 @@ def expected_gc():
 
 
 BIN = {
-    "u89_priv_xid_start": ("DerivedCoreProperties.txt", "XID_Start"),
-    "u89_priv_xid_cont": ("DerivedCoreProperties.txt", "XID_Continue"),
-    "u89_priv_id_start": ("DerivedCoreProperties.txt", "ID_Start"),
-    "u89_priv_id_cont": ("DerivedCoreProperties.txt", "ID_Continue"),
-    "u89_priv_defign": ("DerivedCoreProperties.txt", "Default_Ignorable_Code_Point"),
-    "u89_priv_patws": ("PropList.txt", "Pattern_White_Space"),
-    "u89_priv_patsyn": ("PropList.txt", "Pattern_Syntax"),
-    "u89_priv_join": ("PropList.txt", "Join_Control"),
+    "unicode89_priv_xid_start": ("DerivedCoreProperties.txt", "XID_Start"),
+    "unicode89_priv_xid_cont": ("DerivedCoreProperties.txt", "XID_Continue"),
+    "unicode89_priv_id_start": ("DerivedCoreProperties.txt", "ID_Start"),
+    "unicode89_priv_id_cont": ("DerivedCoreProperties.txt", "ID_Continue"),
+    "unicode89_priv_defign": ("DerivedCoreProperties.txt", "Default_Ignorable_Code_Point"),
+    "unicode89_priv_patws": ("PropList.txt", "Pattern_White_Space"),
+    "unicode89_priv_patsyn": ("PropList.txt", "Pattern_Syntax"),
+    "unicode89_priv_join": ("PropList.txt", "Join_Control"),
 }
 
 
@@ -252,13 +252,13 @@ def main():
             print("  only-actual:   %s" % sorted(a - e)[:6])
     if merge(expected_gc()) != merge(read_gc_ranges()):
         failures += 1
-        print("MISMATCH u89_priv_gc_ranges")
-    failures = check_value_table("u89_priv_gcb", expected_gcb(), failures)
-    failures = check_value_table("u89_priv_incb", expected_incb(), failures)
-    failures = check_value_table("u89_priv_eaw", expected_eaw(), failures)
-    for cname, prop in (("u89_priv_emoji", "Emoji"),
-                        ("u89_priv_emoji_pres", "Emoji_Presentation"),
-                        ("u89_priv_extpict", "Extended_Pictographic")):
+        print("MISMATCH unicode89_priv_gc_ranges")
+    failures = check_value_table("unicode89_priv_gcb", expected_gcb(), failures)
+    failures = check_value_table("unicode89_priv_incb", expected_incb(), failures)
+    failures = check_value_table("unicode89_priv_eaw", expected_eaw(), failures)
+    for cname, prop in (("unicode89_priv_emoji", "Emoji"),
+                        ("unicode89_priv_emoji_pres", "Emoji_Presentation"),
+                        ("unicode89_priv_extpict", "Extended_Pictographic")):
         expected = [(lo, hi, 1) for (lo, hi) in
                     parse_ranges("emoji/emoji-data.txt", prop)]
         actual = [(lo, hi, 1) for (lo, hi) in read_c_ranges(cname)]

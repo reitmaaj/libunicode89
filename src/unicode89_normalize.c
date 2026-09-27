@@ -1,13 +1,13 @@
-/* u89_normalize.c - NFC/NFD/NFKC/NFKD normalization (UAX #15).
+/* unicode89_normalize.c - NFC/NFD/NFKC/NFKD normalization (UAX #15).
 
    Written in green worker/controller shape: straight-line computation lives at
    a function top level; every nested (loop/if) body reduces to a single
    delegation, binding, or terminal return. Normalization is gated by the full
    NormalizationTest.txt conformance suite (just conform-norm). */
 
-#include "../include/u89.h"
-#include "u89_priv.h"
-#include <u89/normalize.h>
+#include "../include/unicode89.h"
+#include "unicode89_priv.h"
+#include <unicode89/normalize.h>
 
 #define SBASE 0xAC00U
 #define LBASE 0x1100U
@@ -19,7 +19,7 @@
 #define NCOUNT (VCOUNT * TCOUNT)
 #define SCOUNT (LCOUNT * NCOUNT)
 
-static int in_range(u89_cp v, u89_cp lo, u89_cp hi)
+static int in_range(unicode89_cp v, unicode89_cp lo, unicode89_cp hi)
 {
     if (v < lo)
     {
@@ -32,7 +32,7 @@ static int in_range(u89_cp v, u89_cp lo, u89_cp hi)
     return 1;
 }
 
-static int hangul_syllable(u89_cp cp)
+static int hangul_syllable(unicode89_cp cp)
 {
     if (cp < SBASE)
     {
@@ -50,7 +50,7 @@ static int hangul_syllable(u89_cp cp)
 /* Probe the sorted nonzero-ccc ranges. Returns -1 when cp precedes range i
    (all later ranges exceed cp: ccc 0), 0 to continue, or the nonzero ccc when
    cp lies in range i. */
-static int ccc_probe(const u89_priv_crange *t, size_t i, u89_cp cp)
+static int ccc_probe(const unicode89_priv_crange *t, size_t i, unicode89_cp cp)
 {
     if (cp < t[i].lo)
     {
@@ -63,14 +63,14 @@ static int ccc_probe(const u89_priv_crange *t, size_t i, u89_cp cp)
     return t[i].ccc;
 }
 
-static int get_ccc(u89_cp cp)
+static int get_ccc(unicode89_cp cp)
 {
     size_t i;
     int code;
 
-    for (i = 0; i < u89_priv_ccc_count; ++i)
+    for (i = 0; i < unicode89_priv_ccc_count; ++i)
     {
-        code = ccc_probe(u89_priv_ccc_ranges, i, cp);
+        code = ccc_probe(unicode89_priv_ccc_ranges, i, cp);
         if (code < 0)
         {
             return 0;
@@ -87,7 +87,7 @@ static int get_ccc(u89_cp cp)
 
 /* Probe the sorted decomposition table by code point. Returns 1 found, 2 stop
    (key precedes), 0 continue. */
-static int decomp_at(const u89_priv_mapping *t, size_t i, u89_cp cp)
+static int decomp_at(const unicode89_priv_mapping *t, size_t i, unicode89_cp cp)
 {
     if (cp < t[i].cp)
     {
@@ -101,7 +101,7 @@ static int decomp_at(const u89_priv_mapping *t, size_t i, u89_cp cp)
 }
 
 /* Copy scratch[k] = src[k] and return the next index. */
-static size_t decomp_copy(const u89_cp *src, u89_cp *scratch, size_t k)
+static size_t decomp_copy(const unicode89_cp *src, unicode89_cp *scratch, size_t k)
 {
     scratch[k] = src[k];
     return k + 1;
@@ -109,7 +109,7 @@ static size_t decomp_copy(const u89_cp *src, u89_cp *scratch, size_t k)
 
 /* Append tmp[0..cnt) into w at offset m (or just count when w is null).
    Returns the new length. */
-static size_t append_scalars(u89_cp *w, size_t m, const u89_cp *tmp, size_t cnt)
+static size_t append_scalars(unicode89_cp *w, size_t m, const unicode89_cp *tmp, size_t cnt)
 {
     size_t k;
 
@@ -127,8 +127,8 @@ static size_t append_scalars(u89_cp *w, size_t m, const u89_cp *tmp, size_t cnt)
 
 /* Emit the stored decomposition of table entry i into scratch. Returns the
    scalar count, or -1 if scratch is too small. */
-static int decomp_emit(const u89_priv_mapping *t, size_t i, const u89_cp *pool,
-                       u89_cp *scratch, size_t slots)
+static int decomp_emit(const unicode89_priv_mapping *t, size_t i, const unicode89_cp *pool,
+                       unicode89_cp *scratch, size_t slots)
 {
     size_t len;
     size_t k;
@@ -150,12 +150,12 @@ static int decomp_emit(const u89_priv_mapping *t, size_t i, const u89_cp *pool,
 
 /* Decompose one Hangul syllable into scratch. Returns the count (2 or 3),
    -1 if scratch is too small, or 0 when cp is not a Hangul syllable. */
-static int hangul_decomp(u89_cp cp, u89_cp *scratch, size_t slots)
+static int hangul_decomp(unicode89_cp cp, unicode89_cp *scratch, size_t slots)
 {
-    u89_cp sindex;
-    u89_cp l;
-    u89_cp v;
-    u89_cp t2;
+    unicode89_cp sindex;
+    unicode89_cp l;
+    unicode89_cp v;
+    unicode89_cp t2;
     int hs;
     int n;
 
@@ -188,7 +188,7 @@ static int hangul_decomp(u89_cp cp, u89_cp *scratch, size_t slots)
 
 /* Advance the decomposition scan. Returns 0 once *i is settled (found, or past
    the last possible row meaning identity), else 1 having moved *i onward. */
-static int decomp_scan(const u89_priv_mapping *t, size_t n, u89_cp cp,
+static int decomp_scan(const unicode89_priv_mapping *t, size_t n, unicode89_cp cp,
                        size_t *i, int *found)
 {
     int eq;
@@ -215,7 +215,7 @@ static int decomp_scan(const u89_priv_mapping *t, size_t n, u89_cp cp,
 
 /* Return the index of cp in the sorted decomposition table, or n when cp is
    absent (identity decomposition). */
-static size_t decomp_find_index(const u89_priv_mapping *t, size_t n, u89_cp cp)
+static size_t decomp_find_index(const unicode89_priv_mapping *t, size_t n, unicode89_cp cp)
 {
     size_t i;
     int found;
@@ -237,7 +237,7 @@ static size_t decomp_find_index(const u89_priv_mapping *t, size_t n, u89_cp cp)
 
 /* Identity decomposition: a scalar not present in a decomposition table maps
    to itself. Returns 1, or -1 when scratch has no room. */
-static int identity_decomp(u89_cp cp, u89_cp *scratch, size_t slots)
+static int identity_decomp(unicode89_cp cp, unicode89_cp *scratch, size_t slots)
 {
     if (slots < 1)
     {
@@ -249,9 +249,9 @@ static int identity_decomp(u89_cp cp, u89_cp *scratch, size_t slots)
 
 /* Fully decompose one scalar into scratch; returns the count written, -1 when
    scratch (slots) is too small. Uses the compatibility table when compat. */
-static int decompose_one(u89_cp cp, int compat, u89_cp *scratch, size_t slots)
+static int decompose_one(unicode89_cp cp, int compat, unicode89_cp *scratch, size_t slots)
 {
-    const u89_priv_mapping *t;
+    const unicode89_priv_mapping *t;
     size_t n;
     size_t i;
     int h;
@@ -265,19 +265,19 @@ static int decompose_one(u89_cp cp, int compat, u89_cp *scratch, size_t slots)
     }
     if (compat)
     {
-        t = u89_priv_compat;
+        t = unicode89_priv_compat;
     }
     else
     {
-        t = u89_priv_canon;
+        t = unicode89_priv_canon;
     }
     if (compat)
     {
-        n = u89_priv_compat_count;
+        n = unicode89_priv_compat_count;
     }
     else
     {
-        n = u89_priv_canon_count;
+        n = unicode89_priv_canon_count;
     }
     i = decomp_find_index(t, n, cp);
     if (i == n)
@@ -285,7 +285,7 @@ static int decompose_one(u89_cp cp, int compat, u89_cp *scratch, size_t slots)
         hid = identity_decomp(cp, scratch, slots);
         return hid;
     }
-    got = decomp_emit(t, i, u89_priv_mapping_pool, scratch, slots);
+    got = decomp_emit(t, i, unicode89_priv_mapping_pool, scratch, slots);
     if (got < 0)
     {
         return -1;
@@ -296,7 +296,7 @@ static int decompose_one(u89_cp cp, int compat, u89_cp *scratch, size_t slots)
 /* ---- Canonical reordering ------------------------------------------------ */
 
 /* Advance *i while w[*i] is a non-starter; returns 0 at a starter or end. */
-static int run_next(const u89_cp *w, size_t count, size_t *i)
+static int run_next(const unicode89_cp *w, size_t count, size_t *i)
 {
     int c;
 
@@ -314,7 +314,7 @@ static int run_next(const u89_cp *w, size_t count, size_t *i)
 }
 
 /* Return one past the maximal non-starter run beginning at i. */
-static size_t run_end(const u89_cp *w, size_t count, size_t i)
+static size_t run_end(const unicode89_cp *w, size_t count, size_t i)
 {
     int go;
 
@@ -328,11 +328,11 @@ static size_t run_end(const u89_cp *w, size_t count, size_t i)
 
 /* Bubble w[b] left one place while its ccc is smaller than the previous.
    Returns b - 1 when a swap happened, else lo (nothing to move). */
-static size_t sort_step(u89_cp *w, size_t b, size_t lo)
+static size_t sort_step(unicode89_cp *w, size_t b, size_t lo)
 {
     int cb;
     int cb1;
-    u89_cp tmp;
+    unicode89_cp tmp;
 
     if (b <= lo)
     {
@@ -352,7 +352,7 @@ static size_t sort_step(u89_cp *w, size_t b, size_t lo)
 
 /* Insert the element at a into the already-sorted prefix [lo, a). Returns the
    next insertion position a + 1. */
-static size_t sort_insert(u89_cp *w, size_t a, size_t lo)
+static size_t sort_insert(unicode89_cp *w, size_t a, size_t lo)
 {
     size_t b;
 
@@ -365,7 +365,7 @@ static size_t sort_insert(u89_cp *w, size_t a, size_t lo)
 }
 
 /* Stable insertion sort of the non-starter run w[lo..hi) by ccc. */
-static void sort_run(u89_cp *w, size_t lo, size_t hi)
+static void sort_run(unicode89_cp *w, size_t lo, size_t hi)
 {
     size_t a;
 
@@ -378,7 +378,7 @@ static void sort_run(u89_cp *w, size_t lo, size_t hi)
 
 /* Advance the reorder scan past w[i]: a starter advances alone, a non-starter
    run is sorted. Returns the next scan index. */
-static size_t reorder_advance(u89_cp *w, size_t count, size_t i)
+static size_t reorder_advance(unicode89_cp *w, size_t count, size_t i)
 {
     int c;
     size_t hi;
@@ -393,7 +393,7 @@ static size_t reorder_advance(u89_cp *w, size_t count, size_t i)
     return hi;
 }
 
-static void reorder(u89_cp *w, size_t count)
+static void reorder(unicode89_cp *w, size_t count)
 {
     size_t i;
 
@@ -406,7 +406,7 @@ static void reorder(u89_cp *w, size_t count)
 
 /* ---- Canonical composition ----------------------------------------------- */
 
-static u89_cp lv_pair(u89_cp first, u89_cp second)
+static unicode89_cp lv_pair(unicode89_cp first, unicode89_cp second)
 {
     int a;
     int b;
@@ -424,9 +424,9 @@ static u89_cp lv_pair(u89_cp first, u89_cp second)
     return SBASE + ((first - LBASE) * VCOUNT + (second - VBASE)) * TCOUNT;
 }
 
-static u89_cp lvt_pair(u89_cp first, u89_cp second)
+static unicode89_cp lvt_pair(unicode89_cp first, unicode89_cp second)
 {
-    u89_cp sindex;
+    unicode89_cp sindex;
     int hs;
 
     hs = hangul_syllable(first);
@@ -452,10 +452,10 @@ static u89_cp lvt_pair(u89_cp first, u89_cp second)
 
 /* Return the Hangul composition of first+second, or 0 when it does not apply.
  */
-static u89_cp hangul_pair(u89_cp first, u89_cp second)
+static unicode89_cp hangul_pair(unicode89_cp first, unicode89_cp second)
 {
-    u89_cp r;
-    u89_cp r2;
+    unicode89_cp r;
+    unicode89_cp r2;
 
     r = lv_pair(first, second);
     if (r != 0)
@@ -468,8 +468,8 @@ static u89_cp hangul_pair(u89_cp first, u89_cp second)
 
 /* Probe the sorted composition table (by first, then second). Returns 0 to
    continue, 1 found, 2 stop (no further row can match). */
-static int comp_probe(const u89_priv_comp *t, size_t i, u89_cp first,
-                      u89_cp second)
+static int comp_probe(const unicode89_priv_comp *t, size_t i, unicode89_cp first,
+                      unicode89_cp second)
 {
     if (t[i].first < first)
     {
@@ -491,19 +491,19 @@ static int comp_probe(const u89_priv_comp *t, size_t i, u89_cp first,
 }
 
 /* Write the stored composite for row i into *result. */
-static void comp_result(const u89_priv_comp *t, size_t i, u89_cp *result)
+static void comp_result(const unicode89_priv_comp *t, size_t i, unicode89_cp *result)
 {
-    u89_cp r;
+    unicode89_cp r;
 
     r = t[i].result;
     *result = r;
 }
 
-static int compose_pair(u89_cp first, u89_cp second, u89_cp *result)
+static int compose_pair(unicode89_cp first, unicode89_cp second, unicode89_cp *result)
 {
     size_t i;
     int code;
-    u89_cp hr;
+    unicode89_cp hr;
 
     hr = hangul_pair(first, second);
     if (hr != 0)
@@ -511,12 +511,12 @@ static int compose_pair(u89_cp first, u89_cp second, u89_cp *result)
         *result = hr;
         return 1;
     }
-    for (i = 0; i < u89_priv_comp_count; ++i)
+    for (i = 0; i < unicode89_priv_comp_count; ++i)
     {
-        code = comp_probe(u89_priv_comp_tbl, i, first, second);
+        code = comp_probe(unicode89_priv_comp_tbl, i, first, second);
         if (code == 1)
         {
-            comp_result(u89_priv_comp_tbl, i, result);
+            comp_result(unicode89_priv_comp_tbl, i, result);
             return 1;
         }
         if (code == 2)
@@ -564,7 +564,7 @@ static struct cst cst_mark(struct cst s, int cls)
     return s;
 }
 
-static struct cst comp_emit(struct cst s, u89_cp *w, u89_cp ch, int cls)
+static struct cst comp_emit(struct cst s, unicode89_cp *w, unicode89_cp ch, int cls)
 {
     struct cst s0;
 
@@ -582,7 +582,7 @@ static struct cst comp_emit(struct cst s, u89_cp *w, u89_cp ch, int cls)
     return s0;
 }
 
-static struct cst comp_commit(struct cst s, u89_cp *w, u89_cp res)
+static struct cst comp_commit(struct cst s, unicode89_cp *w, unicode89_cp res)
 {
     w[s.starter] = res;
     s.adj = 1;
@@ -608,13 +608,13 @@ static int comp_allowed(int adj, int last, int cls)
    emitted scalar has a strictly smaller ccc), otherwise emits it. Generic table
    composition runs regardless of the second member's ccc, composing pairs such
    as U+09C7 + U+09BE -> U+09CB. Returns the advanced state. */
-static struct cst compose_step(u89_cp *w, size_t i, struct cst s)
+static struct cst compose_step(unicode89_cp *w, size_t i, struct cst s)
 {
-    u89_cp ch;
+    unicode89_cp ch;
     int cls;
     int allowed;
     int done;
-    u89_cp res;
+    unicode89_cp res;
 
     ch = w[i];
     cls = get_ccc(ch);
@@ -640,7 +640,7 @@ static struct cst compose_step(u89_cp *w, size_t i, struct cst s)
 }
 
 /* Apply one composition step at read index i, updating *s, and return i + 1. */
-static size_t compose_iter(u89_cp *w, size_t i, struct cst *s)
+static size_t compose_iter(unicode89_cp *w, size_t i, struct cst *s)
 {
     struct cst s1;
 
@@ -649,7 +649,7 @@ static size_t compose_iter(u89_cp *w, size_t i, struct cst *s)
     return i + 1;
 }
 
-static size_t compose(u89_cp *w, size_t count)
+static size_t compose(unicode89_cp *w, size_t count)
 {
     size_t i;
     struct cst s;
@@ -669,16 +669,16 @@ static size_t compose(u89_cp *w, size_t count)
    w is null). Advances *i past the scalar. Returns 0 on success, 1 on
    malformed UTF-8, 2 when the workspace is too small. */
 static int decode_append(const unsigned char *s, size_t n, size_t *i,
-                         int compat, u89_cp *w, size_t wcap, size_t *m)
+                         int compat, unicode89_cp *w, size_t wcap, size_t *m)
 {
     size_t next;
-    u89_status st;
+    unicode89_status st;
     int got;
-    u89_cp cp;
-    u89_cp tmp[32];
+    unicode89_cp cp;
+    unicode89_cp tmp[32];
 
-    st = u89_utf8_decode(s, n, *i, &cp, &next);
-    if (st != U89_OK)
+    st = unicode89_utf8_decode(s, n, *i, &cp, &next);
+    if (st != UNICODE89_OK)
     {
         return 1;
     }
@@ -699,17 +699,17 @@ static int decode_append(const unsigned char *s, size_t n, size_t *i,
     return 0;
 }
 
-static int out_scan(const u89_cp *w, size_t m, size_t *i, size_t *total)
+static int out_scan(const unicode89_cp *w, size_t m, size_t *i, size_t *total)
 {
     int len;
-    u89_cp cp;
+    unicode89_cp cp;
 
     if (*i >= m)
     {
         return 0;
     }
     cp = w[*i];
-    len = u89_utf8_len(cp);
+    len = unicode89_utf8_len(cp);
     *total = *total + (size_t)len;
     *i = *i + 1;
     return 1;
@@ -743,24 +743,24 @@ static int form_compose(int mode)
 
 /* Encode the next scalar w[*i] at dst[*off]; advances both. Returns 0 when all
    scalars are written. */
-static int enc_forward(const u89_cp *w, size_t m, unsigned char *dst, size_t *i,
+static int enc_forward(const unicode89_cp *w, size_t m, unsigned char *dst, size_t *i,
                        size_t *off)
 {
     int len;
-    u89_cp cp;
+    unicode89_cp cp;
 
     if (*i >= m)
     {
         return 0;
     }
     cp = w[*i];
-    len = u89_utf8_encode(cp, dst + *off);
+    len = unicode89_utf8_encode(cp, dst + *off);
     *off = *off + (size_t)len;
     *i = *i + 1;
     return 1;
 }
 
-static size_t out_bytes_of(const u89_cp *w, size_t m)
+static size_t out_bytes_of(const unicode89_cp *w, size_t m)
 {
     size_t total;
     size_t i;
@@ -788,30 +788,30 @@ static int mul_overflow(size_t a, size_t b)
     return 0;
 }
 
-int u89_normalize_work_bound(const unsigned char *s, size_t n, size_t *cp_bound)
+int unicode89_normalize_work_bound(const unsigned char *s, size_t n, size_t *cp_bound)
 {
     int v;
     int mo;
 
     if (cp_bound == NULL)
     {
-        return U89_EINVAL;
+        return UNICODE89_EINVAL;
     }
-    v = u89_utf8_valid(s, n);
+    v = unicode89_utf8_valid(s, n);
     if (v == 0)
     {
-        return U89_EUTF8;
+        return UNICODE89_EUTF8;
     }
     mo = mul_overflow(n, 18);
     if (mo)
     {
-        return U89_EOVERFLOW;
+        return UNICODE89_EOVERFLOW;
     }
     *cp_bound = n * 18;
-    return U89_OK;
+    return UNICODE89_OK;
 }
 
-int u89_normalize_out_bound(const unsigned char *s, size_t n,
+int unicode89_normalize_out_bound(const unsigned char *s, size_t n,
                             size_t *byte_bound)
 {
     int v;
@@ -819,24 +819,24 @@ int u89_normalize_out_bound(const unsigned char *s, size_t n,
 
     if (byte_bound == NULL)
     {
-        return U89_EINVAL;
+        return UNICODE89_EINVAL;
     }
-    v = u89_utf8_valid(s, n);
+    v = unicode89_utf8_valid(s, n);
     if (v == 0)
     {
-        return U89_EUTF8;
+        return UNICODE89_EUTF8;
     }
     mo = mul_overflow(n, 72);
     if (mo)
     {
-        return U89_EOVERFLOW;
+        return UNICODE89_EOVERFLOW;
     }
     *byte_bound = n * 72;
-    return U89_OK;
+    return UNICODE89_OK;
 }
 
-int u89_normalize_ex(int mode, const unsigned char *s, size_t n,
-                     unsigned char *dst, size_t dst_cap, u89_cp *work,
+int unicode89_normalize_ex(int mode, const unsigned char *s, size_t n,
+                     unsigned char *dst, size_t dst_cap, unicode89_cp *work,
                      size_t work_cap)
 {
     size_t m;
@@ -850,17 +850,17 @@ int u89_normalize_ex(int mode, const unsigned char *s, size_t n,
 
     if (mode < 0)
     {
-        return U89_EINVAL;
+        return UNICODE89_EINVAL;
     }
     if (mode > 3)
     {
-        return U89_EINVAL;
+        return UNICODE89_EINVAL;
     }
     if (n != 0)
     {
         if (work == NULL)
         {
-            return U89_EINVAL;
+            return UNICODE89_EINVAL;
         }
     }
     compat = form_compat(mode);
@@ -872,11 +872,11 @@ int u89_normalize_ex(int mode, const unsigned char *s, size_t n,
         st = decode_append(s, n, &i, compat, work, work_cap, &m);
         if (st == 1)
         {
-            return U89_EUTF8;
+            return UNICODE89_EUTF8;
         }
         if (st == 2)
         {
-            return U89_EWORK;
+            return UNICODE89_EWORK;
         }
     }
     reorder(work, m);
@@ -889,13 +889,13 @@ int u89_normalize_ex(int mode, const unsigned char *s, size_t n,
     {
         if (total > 0x7FFFFFFFUL)
         {
-            return U89_ENOSPC;
+            return UNICODE89_ENOSPC;
         }
         return (int)total;
     }
     if (dst_cap < total)
     {
-        return U89_ENOSPC;
+        return UNICODE89_ENOSPC;
     }
     off = 0;
     i = 0;

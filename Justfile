@@ -4,7 +4,7 @@ UCD := env_var_or_default("UCD", "unicode-testdata/17.0.0")
 CC := env_var_or_default("CC", "cc")
 
 build:
-	make libu89
+	make libunicode89
 
 test: build
 	make test
@@ -16,11 +16,11 @@ build32:
 	    echo "build32: SKIPPED: no 32-bit toolchain (install gcc multilib)"; \
 	    exit 0; \
 	fi; \
-	make CC="{{CC}} -m32" BUILD=build/32 libu89
+	make CC="{{CC}} -m32" BUILD=build/32 libunicode89
 
 # Run the unit suite on ILP32 when the toolchain supports it.
 test32: build32
-	@if [ ! -f build/32/libu89.a ]; then exit 0; fi; \
+	@if [ ! -f build/32/libunicode89.a ]; then exit 0; fi; \
 	make CC="{{CC}} -m32" BUILD=build/32 test
 
 # Generate the GCC and Clang compilation databases the green gate reads.
@@ -52,18 +52,18 @@ manifest:
 # tables and the public header are excluded (the header keeps its compact
 # declaration style; regenerate tables with `just tables`).
 format:
-	clang-format -i --style=file:{{GREEN_FORMAT}} src/u89_version.c src/u89_utf8.c src/u89_grapheme.c src/u89_xid.c src/u89_id.c src/u89_properties.c src/u89_width.c src/u89_normalize.c src/u89_casefold.c src/u89_status.c
+	clang-format -i --style=file:{{GREEN_FORMAT}} src/unicode89_version.c src/unicode89_utf8.c src/unicode89_grapheme.c src/unicode89_xid.c src/unicode89_id.c src/unicode89_properties.c src/unicode89_width.c src/unicode89_normalize.c src/unicode89_casefold.c src/unicode89_status.c
 
 # Run the full Unicode NormalizationTest.txt conformance suite (UAX #15).
 conform-norm:
-	make libu89
-	cc -O1 -Iinclude -o build/conformance_norm tools/conformance_norm.c build/libu89.a
+	make libunicode89
+	cc -O1 -Iinclude -o build/conformance_norm tools/conformance_norm.c build/libunicode89.a
 	./build/conformance_norm unicode-testdata/17.0.0/NormalizationTest.txt
 
 # Run the full Unicode GraphemeBreakTest.txt conformance suite (UAX #29).
 conform-grapheme:
-	make libu89
-	cc -O1 -Iinclude -o build/conformance_grapheme tools/conformance_grapheme.c build/libu89.a
+	make libunicode89
+	cc -O1 -Iinclude -o build/conformance_grapheme tools/conformance_grapheme.c build/libunicode89.a
 	./build/conformance_grapheme unicode-testdata/17.0.0/auxiliary/GraphemeBreakTest.txt
 
 # Independent generator oracle: cross-check committed property tables against a
@@ -71,14 +71,14 @@ conform-grapheme:
 gendiff:
 	python3 tools/gen_check.py unicode-testdata/17.0.0
 
-# Differential test: libu89 u89_normalize vs Python unicodedata (needs a u89cli
+# Differential test: libunicode89 unicode89_normalize vs Python unicodedata (needs a unicode89cli
 # build; runs N random BMP strings, default 20000).
 diftest COUNT="20000":
 	python3 tools/gen_unicode_tables.py
-	make build/libu89.a
+	make build/libunicode89.a
 	@cc -std=c89 -pedantic-errors -Wall -Wextra -Werror -Wno-long-long -Wconversion \
 		-Wsign-conversion -Wmissing-prototypes -Wold-style-definition \
-		-Iinclude -Isrc -O0 -g -o build/u89cli tools/u89cli.c build/libu89.a
+		-Iinclude -Isrc -O0 -g -o build/unicode89cli tools/unicode89cli.c build/libunicode89.a
 	python3 tools/difftest.py {{COUNT}}
 
 clean:

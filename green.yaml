@@ -15,5 +15,5 @@ exclude:
 compatibility_paths: []
 
 pure_functions:
-    - u89_status_name
-    - u89_status_message
+    - unicode89_status_name
+    - unicode89_status_message

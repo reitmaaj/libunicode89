@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Differential test: libu89 u89_normalize vs Python unicodedata.
+"""Differential test: libunicode89 unicode89_normalize vs Python unicodedata.
 
-Compiles/uses tools/u89cli and compares its output to
+Compiles/uses tools/unicode89cli and compares its output to
 unicodedata.normalize(form, s) for many generated strings over the
-common codepoint set (present in both Python's and libu89's Unicode).
+common codepoint set (present in both Python's and libunicode89's Unicode).
 
 Usage: python3 tools/difftest.py [N]   (N random strings, default 20000)
 """
@@ -15,12 +15,12 @@ import sys
 import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CLI = os.path.join(ROOT, "build", "u89cli")
+CLI = os.path.join(ROOT, "build", "unicode89cli")
 
 FORMS = {0: "NFC", 1: "NFD", 2: "NFKC", 3: "NFKD"}
 
 # Codepoints used in the differential corpus: restrict to BMP ranges whose
-# normalization is stable between Unicode 16.0.0 (Python) and 17.0.0 (libu89).
+# normalization is stable between Unicode 16.0.0 (Python) and 17.0.0 (libunicode89).
 # Supplementary-plane mappings churn between versions and are excluded.
 STARTERS = (list(range(0x20, 0x300)) + list(range(0x1E00, 0x1EFF))
             + list(range(0x1F00, 0x1FFF)))
@@ -64,7 +64,7 @@ def rand_string(rng, maxlen=12):
 
 
 def run_cli_batch(mode, strings):
-    """Run u89cli once with many newline-joined strings; returns list of
+    """Run unicode89cli once with many newline-joined strings; returns list of
     per-string hex results (or None for that line on error)."""
     data = "\n".join(s.encode("utf-8").hex() for s in strings) + "\n"
     p = subprocess.run([CLI, str(mode)], input=data,
@@ -78,7 +78,7 @@ def run_cli_batch(mode, strings):
 def main():
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
     if not os.path.exists(CLI):
-        os.system("make -C %s build/u89cli" % ROOT)
+        os.system("make -C %s build/unicode89cli" % ROOT)
     rng = random.Random(0)
     failures = 0
     batch = 256

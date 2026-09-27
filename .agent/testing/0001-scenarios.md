@@ -1,4 +1,4 @@
-# libu89 testing scenarios (BDD)
+# libunicode89 testing scenarios (BDD)
 
 ## 0001 — UTF-8 validation and iteration
 SCENARIO reject malformed UTF-8
@@ -76,7 +76,7 @@ THEN a buffer of exactly that capacity is sufficient to normalize without error.
 SCENARIO normalization matches a reference implementation
 GIVEN random BMP strings over starters, combining marks, compatibility
     characters, and Hangul
-WHEN NFC/NFD/NFKC/NFKD are applied by libu89 and by Python unicodedata
+WHEN NFC/NFD/NFKC/NFKD are applied by libunicode89 and by Python unicodedata
 THEN the outputs are byte-identical (differential test, tools/difftest.py).
 
 SCENARIO repeated characters in a decomposition are preserved
@@ -113,34 +113,34 @@ THEN a later mark with a class no larger than its predecessor is not consumed
 ## 0010 — Positional UTF-8 navigation
 SCENARIO decode at an arbitrary scalar boundary
 GIVEN valid UTF-8 and a byte position on a scalar boundary
-WHEN u89_utf8_decode() runs at that position
-THEN it returns U89_OK, the scalar, and the first byte after the scalar.
+WHEN unicode89_utf8_decode() runs at that position
+THEN it returns UNICODE89_OK, the scalar, and the first byte after the scalar.
 
 SCENARIO decode past the end
 GIVEN a byte position equal to or greater than the input length
 WHEN decoding
-THEN U89_ERANGE is returned, never U89_EUTF8 and never a scalar.
+THEN UNICODE89_ERANGE is returned, never UNICODE89_EUTF8 and never a scalar.
 
 SCENARIO reject malformed input at a position
 GIVEN overlong, surrogate, out-of-range, truncated, isolated-continuation,
     invalid-lead, or bad-continuation bytes
 WHEN decoding
-THEN U89_EUTF8 is returned and no scalar is produced.
+THEN UNICODE89_EUTF8 is returned and no scalar is produced.
 
 SCENARIO find the preceding scalar
 GIVEN a position on a scalar boundary
-WHEN u89_utf8_prev() runs
+WHEN unicode89_utf8_prev() runs
 THEN it returns the scalar ending at that position and its starting offset,
-    and prev at position 0 returns U89_ERANGE.
+    and prev at position 0 returns UNICODE89_ERANGE.
 
 SCENARIO positional forward/backward agreement
 GIVEN every scalar of a valid string
-WHEN decoded forward and then reversed with u89_utf8_prev()
+WHEN decoded forward and then reversed with unicode89_utf8_prev()
 THEN the same scalar and start offset are recovered.
 
 SCENARIO expected sequence length from a lead byte
 GIVEN a leading byte that may begin a UTF-8 sequence
-WHEN u89_utf8_seq_len() is asked
+WHEN unicode89_utf8_seq_len() is asked
 THEN it reports 1..4 for valid leads and 0 for continuation bytes, overlong
     leads (C0, C1), and leads above F4, so callers can distinguish a
     truncated sequence from a malformed one.

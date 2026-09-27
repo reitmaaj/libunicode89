@@ -1,12 +1,12 @@
-/* u89_utf8.c - libu89 scalar core: UTF-8 validation, iteration, encoding. */
+/* unicode89_utf8.c - libunicode89 scalar core: UTF-8 validation, iteration, encoding. */
 
-#include "../include/u89.h"
-#include <u89/width.h>
+#include "../include/unicode89.h"
+#include <unicode89/width.h>
 
-#define U89_MAX (0x10FFFFUL)
-#define U89_BAD ((size_t)-1)
+#define UNICODE89_MAX (0x10FFFFUL)
+#define UNICODE89_BAD ((size_t)-1)
 
-static int between(u89_cp cp, u89_cp lo, u89_cp hi)
+static int between(unicode89_cp cp, unicode89_cp lo, unicode89_cp hi)
 {
     if (cp < lo)
     {
@@ -19,7 +19,7 @@ static int between(u89_cp cp, u89_cp lo, u89_cp hi)
     return 1;
 }
 
-int u89_is_scalar(u89_cp cp)
+int unicode89_is_scalar(unicode89_cp cp)
 {
     int a;
     int b;
@@ -29,7 +29,7 @@ int u89_is_scalar(u89_cp cp)
     {
         return 1;
     }
-    b = between(cp, 0xE000UL, U89_MAX);
+    b = between(cp, 0xE000UL, UNICODE89_MAX);
     if (b)
     {
         return 1;
@@ -38,7 +38,7 @@ int u89_is_scalar(u89_cp cp)
 }
 
 /* Write cp to *out when out is not null. */
-static void emit_out(u89_cp *out, u89_cp cp)
+static void emit_out(unicode89_cp *out, unicode89_cp cp)
 {
     if (out != NULL)
     {
@@ -48,11 +48,11 @@ static void emit_out(u89_cp *out, u89_cp cp)
 
 /* Decode a 2-byte sequence at s (lead already known valid C2..DF). Returns
    2 on success, 0 on malformed/truncated input. */
-static int decode_two(const unsigned char *s, size_t n, u89_cp *out)
+static int decode_two(const unsigned char *s, size_t n, unicode89_cp *out)
 {
     unsigned char b;
     unsigned char c1;
-    u89_cp cp;
+    unicode89_cp cp;
 
     if (n < 2)
     {
@@ -64,19 +64,19 @@ static int decode_two(const unsigned char *s, size_t n, u89_cp *out)
         return 0;
     }
     b = s[0];
-    cp = (((u89_cp)b & 0x1F) << 6) | ((u89_cp)c1 & 0x3F);
+    cp = (((unicode89_cp)b & 0x1F) << 6) | ((unicode89_cp)c1 & 0x3F);
     emit_out(out, cp);
     return 2;
 }
 
 /* Decode a 3-byte sequence at s (lead E0..EF), rejecting overlong and
    surrogate encodings. Returns 3 on success, 0 otherwise. */
-static int decode_three(const unsigned char *s, size_t n, u89_cp *out)
+static int decode_three(const unsigned char *s, size_t n, unicode89_cp *out)
 {
     unsigned char b;
     unsigned char c1;
     unsigned char c2;
-    u89_cp cp;
+    unicode89_cp cp;
 
     if (n < 3)
     {
@@ -107,21 +107,21 @@ static int decode_three(const unsigned char *s, size_t n, u89_cp *out)
     {
         return 0;
     }
-    cp = (((u89_cp)b & 0x0F) << 12) | (((u89_cp)c1 & 0x3F) << 6) |
-         ((u89_cp)c2 & 0x3F);
+    cp = (((unicode89_cp)b & 0x0F) << 12) | (((unicode89_cp)c1 & 0x3F) << 6) |
+         ((unicode89_cp)c2 & 0x3F);
     emit_out(out, cp);
     return 3;
 }
 
 /* Decode a 4-byte sequence at s (lead F0..F4), rejecting overlong encodings
    and values above U+10FFFF. Returns 4 on success, 0 otherwise. */
-static int decode_four(const unsigned char *s, size_t n, u89_cp *out)
+static int decode_four(const unsigned char *s, size_t n, unicode89_cp *out)
 {
     unsigned char b;
     unsigned char c1;
     unsigned char c2;
     unsigned char c3;
-    u89_cp cp;
+    unicode89_cp cp;
 
     if (n < 4)
     {
@@ -157,8 +157,8 @@ static int decode_four(const unsigned char *s, size_t n, u89_cp *out)
     {
         return 0;
     }
-    cp = (((u89_cp)b & 0x07) << 18) | (((u89_cp)c1 & 0x3F) << 12) |
-         (((u89_cp)c2 & 0x3F) << 6) | ((u89_cp)c3 & 0x3F);
+    cp = (((unicode89_cp)b & 0x07) << 18) | (((unicode89_cp)c1 & 0x3F) << 12) |
+         (((unicode89_cp)c2 & 0x3F) << 6) | ((unicode89_cp)c3 & 0x3F);
     emit_out(out, cp);
     return 4;
 }
@@ -166,7 +166,7 @@ static int decode_four(const unsigned char *s, size_t n, u89_cp *out)
 /* Decode one UTF-8 sequence at s with n bytes available. Returns bytes
    consumed (1..4), or 0 if malformed or truncated. Writes the scalar to *out
    only on success. */
-static int decode_one(const unsigned char *s, size_t n, u89_cp *out)
+static int decode_one(const unsigned char *s, size_t n, unicode89_cp *out)
 {
     unsigned char b;
     int r;
@@ -179,7 +179,7 @@ static int decode_one(const unsigned char *s, size_t n, u89_cp *out)
     b = s[0];
     if (b < 0x80)
     {
-        emit_out(out, (u89_cp)b);
+        emit_out(out, (unicode89_cp)b);
         return 1;
     }
     r = between(b, 0xC2, 0xDF);
@@ -203,27 +203,27 @@ static int decode_one(const unsigned char *s, size_t n, u89_cp *out)
     return 0;
 }
 
-u89_status u89_utf8_decode(const unsigned char *s, size_t n, size_t pos,
-                           u89_cp *cp, size_t *next)
+unicode89_status unicode89_utf8_decode(const unsigned char *s, size_t n, size_t pos,
+                           unicode89_cp *cp, size_t *next)
 {
     int d;
     size_t adv;
 
     if (pos >= n)
     {
-        return U89_ERANGE;
+        return UNICODE89_ERANGE;
     }
     d = decode_one(s + pos, n - pos, cp);
     if (d == 0)
     {
-        return U89_EUTF8;
+        return UNICODE89_EUTF8;
     }
     adv = pos + (size_t)d;
     if (next != NULL)
     {
         *next = adv;
     }
-    return U89_OK;
+    return UNICODE89_OK;
 }
 
 /* Lower bound for the backward scan: pos-4, or 0. */
@@ -253,9 +253,9 @@ static int prev_step(const unsigned char *s, size_t *i, size_t floor)
 }
 
 /* Scan back at most three continuation bytes to the lead of the scalar ending
-   at pos. Returns the lead offset, or U89_BAD when the bytes cannot form a
+   at pos. Returns the lead offset, or UNICODE89_BAD when the bytes cannot form a
    scalar ending exactly at pos. */
-static size_t prev_lead(const unsigned char *s, size_t pos, u89_cp *out)
+static size_t prev_lead(const unsigned char *s, size_t pos, unicode89_cp *out)
 {
     size_t i;
     size_t floor;
@@ -272,34 +272,34 @@ static size_t prev_lead(const unsigned char *s, size_t pos, u89_cp *out)
     d = decode_one(s + i, pos - i, out);
     if (d == 0)
     {
-        return U89_BAD;
+        return UNICODE89_BAD;
     }
     if (i + (size_t)d != pos)
     {
-        return U89_BAD;
+        return UNICODE89_BAD;
     }
     return i;
 }
 
-u89_status u89_utf8_prev(const unsigned char *s, size_t n, size_t pos,
-                         u89_cp *cp, size_t *prev)
+unicode89_status unicode89_utf8_prev(const unsigned char *s, size_t n, size_t pos,
+                         unicode89_cp *cp, size_t *prev)
 {
     size_t lead;
-    u89_cp out;
+    unicode89_cp out;
 
     if (pos == 0)
     {
-        return U89_ERANGE;
+        return UNICODE89_ERANGE;
     }
     if (pos > n)
     {
-        return U89_ERANGE;
+        return UNICODE89_ERANGE;
     }
     out = 0;
     lead = prev_lead(s, pos, &out);
-    if (lead == U89_BAD)
+    if (lead == UNICODE89_BAD)
     {
-        return U89_EUTF8;
+        return UNICODE89_EUTF8;
     }
     if (cp != NULL)
     {
@@ -309,26 +309,26 @@ u89_status u89_utf8_prev(const unsigned char *s, size_t n, size_t pos,
     {
         *prev = lead;
     }
-    return U89_OK;
+    return UNICODE89_OK;
 }
 
-/* Advance index i past one valid scalar. Returns the new index, or U89_BAD
+/* Advance index i past one valid scalar. Returns the new index, or UNICODE89_BAD
    when the bytes at i are malformed. */
 static size_t decode_adv(const unsigned char *s, size_t n, size_t i)
 {
     int d;
-    u89_cp cp;
+    unicode89_cp cp;
 
     d = decode_one(s + i, n - i, &cp);
     if (d == 0)
     {
-        return U89_BAD;
+        return UNICODE89_BAD;
     }
     i = i + (size_t)d;
     return i;
 }
 
-int u89_utf8_valid(const unsigned char *s, size_t n)
+int unicode89_utf8_valid(const unsigned char *s, size_t n)
 {
     size_t i;
 
@@ -336,7 +336,7 @@ int u89_utf8_valid(const unsigned char *s, size_t n)
     while (i < n)
     {
         i = decode_adv(s, n, i);
-        if (i == U89_BAD)
+        if (i == UNICODE89_BAD)
         {
             return 0;
         }
@@ -344,7 +344,7 @@ int u89_utf8_valid(const unsigned char *s, size_t n)
     return 1;
 }
 
-int u89_utf8_seq_len(unsigned char lead)
+int unicode89_utf8_seq_len(unsigned char lead)
 {
     int r;
 
@@ -352,17 +352,17 @@ int u89_utf8_seq_len(unsigned char lead)
     {
         return 1;
     }
-    r = between((u89_cp)lead, 0xC2, 0xDF);
+    r = between((unicode89_cp)lead, 0xC2, 0xDF);
     if (r)
     {
         return 2;
     }
-    r = between((u89_cp)lead, 0xE0, 0xEF);
+    r = between((unicode89_cp)lead, 0xE0, 0xEF);
     if (r)
     {
         return 3;
     }
-    r = between((u89_cp)lead, 0xF0, 0xF4);
+    r = between((unicode89_cp)lead, 0xF0, 0xF4);
     if (r)
     {
         return 4;
@@ -370,11 +370,11 @@ int u89_utf8_seq_len(unsigned char lead)
     return 0;
 }
 
-int u89_utf8_len(u89_cp cp)
+int unicode89_utf8_len(unicode89_cp cp)
 {
     int sc;
 
-    sc = u89_is_scalar(cp);
+    sc = unicode89_is_scalar(cp);
     if (!sc)
     {
         return 0;
@@ -402,20 +402,20 @@ static void put_byte(unsigned char *dst, size_t i, unsigned int v)
     dst[i] = uc;
 }
 
-static int encode_one(u89_cp cp, unsigned char *out)
+static int encode_one(unicode89_cp cp, unsigned char *out)
 {
     put_byte(out, 0, cp);
     return 1;
 }
 
-static int encode_two(u89_cp cp, unsigned char *out)
+static int encode_two(unicode89_cp cp, unsigned char *out)
 {
     put_byte(out, 0, 0xC0 | (cp >> 6));
     put_byte(out, 1, 0x80 | (cp & 0x3F));
     return 2;
 }
 
-static int encode_three(u89_cp cp, unsigned char *out)
+static int encode_three(unicode89_cp cp, unsigned char *out)
 {
     put_byte(out, 0, 0xE0 | (cp >> 12));
     put_byte(out, 1, 0x80 | ((cp >> 6) & 0x3F));
@@ -423,7 +423,7 @@ static int encode_three(u89_cp cp, unsigned char *out)
     return 3;
 }
 
-static int encode_four(u89_cp cp, unsigned char *out)
+static int encode_four(unicode89_cp cp, unsigned char *out)
 {
     put_byte(out, 0, 0xF0 | (cp >> 18));
     put_byte(out, 1, 0x80 | ((cp >> 12) & 0x3F));
@@ -432,12 +432,12 @@ static int encode_four(u89_cp cp, unsigned char *out)
     return 4;
 }
 
-int u89_utf8_encode(u89_cp cp, unsigned char *out)
+int unicode89_utf8_encode(unicode89_cp cp, unsigned char *out)
 {
     int sc;
     int r;
 
-    sc = u89_is_scalar(cp);
+    sc = unicode89_is_scalar(cp);
     if (!sc)
     {
         return 0;
@@ -461,7 +461,7 @@ int u89_utf8_encode(u89_cp cp, unsigned char *out)
     return r;
 }
 
-void u89_iter_init(u89_iter *it, const unsigned char *s, size_t n)
+void unicode89_iter_init(unicode89_iter *it, const unsigned char *s, size_t n)
 {
     const unsigned char *e;
 
@@ -473,14 +473,14 @@ void u89_iter_init(u89_iter *it, const unsigned char *s, size_t n)
     it->leading = 0;
 }
 
-int u89_iter_next(u89_iter *it)
+int unicode89_iter_next(unicode89_iter *it)
 {
     const unsigned char *cur;
     const unsigned char *end;
     const unsigned char *np;
     size_t rem;
     int d;
-    u89_cp cp;
+    unicode89_cp cp;
 
     if (it->err != 0)
     {
@@ -507,11 +507,11 @@ int u89_iter_next(u89_iter *it)
     return 0;
 }
 
-int u89_utf16_units(u89_cp cp)
+int unicode89_utf16_units(unicode89_cp cp)
 {
     int sc;
 
-    sc = u89_is_scalar(cp);
+    sc = unicode89_is_scalar(cp);
     if (!sc)
     {
         return 0;
@@ -523,7 +523,7 @@ int u89_utf16_units(u89_cp cp)
     return 2;
 }
 
-int u89_utf16_is_high_surrogate(unsigned int unit)
+int unicode89_utf16_is_high_surrogate(unsigned int unit)
 {
     int r;
 
@@ -531,7 +531,7 @@ int u89_utf16_is_high_surrogate(unsigned int unit)
     return r;
 }
 
-int u89_utf16_is_low_surrogate(unsigned int unit)
+int unicode89_utf16_is_low_surrogate(unsigned int unit)
 {
     int r;
 
@@ -539,14 +539,14 @@ int u89_utf16_is_low_surrogate(unsigned int unit)
     return r;
 }
 
-int u89_utf16_decode_pair(unsigned int high, unsigned int low, u89_cp *cp)
+int unicode89_utf16_decode_pair(unsigned int high, unsigned int low, unicode89_cp *cp)
 {
     int h;
     int l;
-    u89_cp v;
+    unicode89_cp v;
 
-    h = u89_utf16_is_high_surrogate(high);
-    l = u89_utf16_is_low_surrogate(low);
+    h = unicode89_utf16_is_high_surrogate(high);
+    l = unicode89_utf16_is_low_surrogate(low);
     if (h == 0)
     {
         return 0;
@@ -565,7 +565,7 @@ int u89_utf16_decode_pair(unsigned int high, unsigned int low, u89_cp *cp)
 }
 
 /* White_Space property (UAX #44), private subset plus explicit singletons. */
-static int ws_range(u89_cp cp)
+static int ws_range(unicode89_cp cp)
 {
     int a;
     int b;
@@ -583,7 +583,7 @@ static int ws_range(u89_cp cp)
     return 0;
 }
 
-int u89_width_is_whitespace(u89_cp cp)
+int unicode89_width_is_whitespace(unicode89_cp cp)
 {
     int r;
 

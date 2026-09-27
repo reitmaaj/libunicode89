@@ -1,5 +1,5 @@
 #!/bin/sh -eu
-# Regenerate the pinned UCD provenance manifest for libu89.
+# Regenerate the pinned UCD provenance manifest for libunicode89.
 #
 # Writes unicode-testdata/17.0.0/SOURCES.txt: the Unicode version, every
 # vendored data file with its sha256, the generator source, and the command
@@ -11,7 +11,7 @@ data="$root/unicode-testdata/17.0.0"
 out="$data/SOURCES.txt"
 
 {
-    echo "# libu89 vendored Unicode data provenance"
+    echo "# libunicode89 vendored Unicode data provenance"
     echo "#"
     echo "# Unicode version: 17.0.0"
     echo "# Generator: tools/gen_unicode_tables.py"

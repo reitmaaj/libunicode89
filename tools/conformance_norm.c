@@ -1,5 +1,5 @@
 /* conformance_norm.c - run the Unicode 17.0.0 NormalizationTest.txt suite
-   against libu89 u89_normalize and report every mismatch. Usage:
+   against libunicode89 unicode89_normalize and report every mismatch. Usage:
      conformance_norm <path/to/NormalizationTest.txt>
    Exit 0 when all rows pass, nonzero otherwise. */
 
@@ -7,14 +7,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "u89.h"
-#include <u89/normalize.h>
+#include "unicode89.h"
+#include <unicode89/normalize.h>
 
 #define MAXLEN 4096
 
 static unsigned char cbuf[5][MAXLEN];
 static size_t clen[5];
-static u89_cp work[16384];
+static unicode89_cp work[16384];
 
 /* Parse one ';'-delimited field of hex scalars into cbuf[col]. Returns 0 on
    success. */
@@ -22,7 +22,7 @@ static int parse_col(const char *field, int col)
 {
     const char *p;
     unsigned char *o;
-    u89_cp cp;
+    unicode89_cp cp;
     char hex[9];
     int i;
     int n;
@@ -52,14 +52,14 @@ static int parse_col(const char *field, int col)
             p = p + 1;
         }
         hex[i] = 0;
-        cp = (u89_cp)strtoul(hex, NULL, 16);
+        cp = (unicode89_cp)strtoul(hex, NULL, 16);
         if (cp >= 0x80UL)
         {
             if (clen[col] + 4 > MAXLEN)
             {
                 return 1;
             }
-            n = u89_utf8_encode(cp, o + clen[col]);
+            n = unicode89_utf8_encode(cp, o + clen[col]);
             clen[col] = clen[col] + (size_t)n;
         }
         else
@@ -81,7 +81,7 @@ static int expect_col(int mode, const unsigned char *s, size_t n, int col)
     int r;
     size_t want;
 
-    r = u89_normalize_ex(mode, s, n, dst, sizeof dst, work, 16384);
+    r = unicode89_normalize_ex(mode, s, n, dst, sizeof dst, work, 16384);
     if (r < 0)
     {
         return 0;

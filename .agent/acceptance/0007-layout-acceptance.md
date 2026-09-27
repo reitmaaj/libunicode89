@@ -5,11 +5,11 @@ Additions to `.agent/acceptance/0001-acceptance.md`. They trace to
 
 ## Must exhibit (exhibit)
 
-- `include/u89.h`, `include/u89/grapheme.h`, `include/u89/width.h`,
-  `include/u89/properties.h`, `include/u89/identifier.h`,
-  `include/u89/casefold.h` and `include/u89/normalize.h` MUST be the only
+- `include/unicode89.h`, `include/unicode89/grapheme.h`, `include/unicode89/width.h`,
+  `include/unicode89/properties.h`, `include/unicode89/identifier.h`,
+  `include/unicode89/casefold.h` and `include/unicode89/normalize.h` MUST be the only
   public headers.
-- Each named header MUST include `<u89.h>` and compile standalone in strict
+- Each named header MUST include `<unicode89.h>` and compile standalone in strict
   C89.
 - `just check`, `just test`, `just api-convention` and
   `just error-convention` MUST pass.
@@ -17,6 +17,6 @@ Additions to `.agent/acceptance/0001-acceptance.md`. They trace to
 
 ## Must reject / fail safely (reject)
 
-- `include/u89_ext.h` or any exported `u89_ext_*` symbol MUST NOT remain.
+- `include/unicode89_ext.h` or any exported `unicode89_ext_*` symbol MUST NOT remain.
 - A named extension header MUST NOT include an unrelated sibling.
-- `include/u89.h` MUST NOT include any `u89/*.h` header.
+- `include/unicode89.h` MUST NOT include any `unicode89/*.h` header.

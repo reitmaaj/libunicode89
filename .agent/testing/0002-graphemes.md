@@ -1,23 +1,23 @@
-# libu89 testing scenarios — extended grapheme clusters
+# libunicode89 testing scenarios — extended grapheme clusters
 
 ## 0001 — Forward traversal
 SCENARIO next advances one cluster
 GIVEN valid UTF-8 and a position at or inside a cluster
-WHEN u89_grapheme_next() is called
+WHEN unicode89_grapheme_next() is called
 THEN it returns the smallest cluster boundary strictly greater than the
     position, and n at the end of input.
 
 ## 0002 — Backward traversal
 SCENARIO prev retreats one cluster
 GIVEN valid UTF-8 and a position after at least one cluster
-WHEN u89_grapheme_prev() is called
+WHEN unicode89_grapheme_prev() is called
 THEN it returns the largest cluster boundary strictly less than the position,
     and 0 at the start of input.
 
 ## 0003 — Boundary predicate
 SCENARIO boundary agrees with traversal
 GIVEN a string whose official boundaries are known
-WHEN u89_grapheme_boundary() is called at every byte position
+WHEN unicode89_grapheme_boundary() is called at every byte position
 THEN it is true exactly at positions 0, n, and every official boundary.
 
 ## 0004 — Conformance

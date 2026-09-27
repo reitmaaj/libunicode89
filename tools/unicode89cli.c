@@ -1,12 +1,12 @@
-/* u89cli.c - test harness: normalize hex input from stdin, emit hex out.
-   Usage: u89cli MODE   (MODE: 0 NFC, 1 NFD, 2 NFKC, 3 NFKD)
+/* unicode89cli.c - test harness: normalize hex input from stdin, emit hex out.
+   Usage: unicode89cli MODE   (MODE: 0 NFC, 1 NFD, 2 NFKC, 3 NFKD)
    Reads a hex string (no spaces) from stdin, prints normalized hex. */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/u89.h"
-#include <u89/normalize.h>
+#include "../include/unicode89.h"
+#include <unicode89/normalize.h>
 
 static unsigned char *hex_to_bytes(const char *h, size_t *n)
 {
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     char inbuf[4096];
     unsigned char *src;
     unsigned char *dst;
-    u89_cp *work;
+    unicode89_cp *work;
     size_t n;
     size_t cap;
     int mode;
@@ -72,13 +72,13 @@ int main(int argc, char **argv)
             free(src);
             return 2;
         }
-        work = (u89_cp *)malloc((n * 18 + 16) * sizeof(u89_cp));
+        work = (unicode89_cp *)malloc((n * 18 + 16) * sizeof(unicode89_cp));
         if (work == 0) {
             free(src);
             free(dst);
             return 2;
         }
-        r = u89_normalize_ex(mode, src, n, dst, cap, work, n * 18 + 16);
+        r = unicode89_normalize_ex(mode, src, n, dst, cap, work, n * 18 + 16);
         if (r < 0) {
             free(src);
             free(dst);
