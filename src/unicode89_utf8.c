@@ -1,4 +1,5 @@
-/* unicode89_utf8.c - libunicode89 scalar core: UTF-8 validation, iteration, encoding. */
+/* unicode89_utf8.c - libunicode89 scalar core: UTF-8 validation, iteration,
+ * encoding. */
 
 #include "../include/unicode89.h"
 #include <unicode89/width.h>
@@ -203,8 +204,9 @@ static int decode_one(const unsigned char *s, size_t n, unicode89_cp *out)
     return 0;
 }
 
-unicode89_status unicode89_utf8_decode(const unsigned char *s, size_t n, size_t pos,
-                           unicode89_cp *cp, size_t *next)
+unicode89_status unicode89_utf8_decode(const unsigned char *s, size_t n,
+                                       size_t pos, unicode89_cp *cp,
+                                       size_t *next)
 {
     int d;
     size_t adv;
@@ -253,8 +255,8 @@ static int prev_step(const unsigned char *s, size_t *i, size_t floor)
 }
 
 /* Scan back at most three continuation bytes to the lead of the scalar ending
-   at pos. Returns the lead offset, or UNICODE89_BAD when the bytes cannot form a
-   scalar ending exactly at pos. */
+   at pos. Returns the lead offset, or UNICODE89_BAD when the bytes cannot form
+   a scalar ending exactly at pos. */
 static size_t prev_lead(const unsigned char *s, size_t pos, unicode89_cp *out)
 {
     size_t i;
@@ -281,8 +283,8 @@ static size_t prev_lead(const unsigned char *s, size_t pos, unicode89_cp *out)
     return i;
 }
 
-unicode89_status unicode89_utf8_prev(const unsigned char *s, size_t n, size_t pos,
-                         unicode89_cp *cp, size_t *prev)
+unicode89_status unicode89_utf8_prev(const unsigned char *s, size_t n,
+                                     size_t pos, unicode89_cp *cp, size_t *prev)
 {
     size_t lead;
     unicode89_cp out;
@@ -312,8 +314,8 @@ unicode89_status unicode89_utf8_prev(const unsigned char *s, size_t n, size_t po
     return UNICODE89_OK;
 }
 
-/* Advance index i past one valid scalar. Returns the new index, or UNICODE89_BAD
-   when the bytes at i are malformed. */
+/* Advance index i past one valid scalar. Returns the new index, or
+   UNICODE89_BAD when the bytes at i are malformed. */
 static size_t decode_adv(const unsigned char *s, size_t n, size_t i)
 {
     int d;
@@ -539,7 +541,8 @@ int unicode89_utf16_is_low_surrogate(unsigned int unit)
     return r;
 }
 
-int unicode89_utf16_decode_pair(unsigned int high, unsigned int low, unicode89_cp *cp)
+int unicode89_utf16_decode_pair(unsigned int high, unsigned int low,
+                                unicode89_cp *cp)
 {
     int h;
     int l;

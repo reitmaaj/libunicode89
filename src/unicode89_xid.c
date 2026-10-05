@@ -7,7 +7,8 @@
 /* Probe sorted, non-overlapping ranges. Returns 1 when cp lies in range i,
    2 when cp precedes range i (ranges are ascending, so scanning may stop),
    otherwise 0 (continue scanning). */
-static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp);
+static int range_probe(const unicode89_priv_range *t, size_t i,
+                       unicode89_cp cp);
 
 static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp)
 {
@@ -57,7 +58,8 @@ int unicode89_identifier_xid_start(unicode89_cp cp)
     {
         return 0;
     }
-    r = in_ranges(unicode89_priv_xid_start_ranges, unicode89_priv_xid_start_count, cp);
+    r = in_ranges(unicode89_priv_xid_start_ranges,
+                  unicode89_priv_xid_start_count, cp);
     return r;
 }
 
@@ -71,6 +73,7 @@ int unicode89_identifier_xid_continue(unicode89_cp cp)
     {
         return 0;
     }
-    r = in_ranges(unicode89_priv_xid_cont_ranges, unicode89_priv_xid_cont_count, cp);
+    r = in_ranges(unicode89_priv_xid_cont_ranges, unicode89_priv_xid_cont_count,
+                  cp);
     return r;
 }

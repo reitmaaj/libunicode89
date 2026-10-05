@@ -1,47 +1,75 @@
-/* unicode89_width.c - terminal display width and Unicode-whitespace word wrap. */
+/* unicode89_width.c - terminal display width and Unicode-whitespace word wrap.
+ */
 
 #include "../include/unicode89.h"
 #include "unicode89_priv.h"
 #include <unicode89/width.h>
 
-/* Probe sorted, non-overlapping width ranges. Returns 0 to continue, 2 when
-   cp precedes range i (stop scanning), or the width type plus 3 when cp lies
-   in range i. */
-static int width_probe(const unicode89_priv_wrange *t, size_t i, unicode89_cp cp);
-
-static int width_probe(const unicode89_priv_wrange *t, size_t i, unicode89_cp cp)
+/* Binary-search helpers over sorted, non-overlapping ranges. */
+static size_t bs_mid(size_t lo, size_t hi)
 {
-    unicode89_cp lo;
-    unicode89_cp hi;
+    size_t span;
 
-    lo = t[i].lo;
-    if (cp < lo)
+    span = hi - lo;
+    span = span / 2;
+    return lo + span;
+}
+
+static size_t bs_step(size_t mid)
+{
+    return mid + 1;
+}
+
+static int wrange_before(const unicode89_priv_wrange *t, size_t i,
+                         unicode89_cp cp)
+{
+    if (cp < t[i].lo)
     {
-        return 2;
+        return 1;
     }
-    hi = t[i].hi;
-    if (cp > hi)
+    return 0;
+}
+
+static int wrange_after(const unicode89_priv_wrange *t, size_t i,
+                        unicode89_cp cp)
+{
+    if (cp > t[i].hi)
     {
-        return 0;
+        return 1;
     }
-    return t[i].type + 3;
+    return 0;
+}
+
+static int wrange_type(const unicode89_priv_wrange *t, size_t i)
+{
+    return t[i].type;
 }
 
 static int width_type_at(unicode89_cp cp)
 {
-    size_t i;
-    int code;
+    size_t lo;
+    size_t hi;
+    size_t mid;
 
-    for (i = 0; i < unicode89_priv_width_count; ++i)
+    lo = 0;
+    hi = unicode89_priv_width_count;
+    while (lo < hi)
     {
-        code = width_probe(unicode89_priv_width_ranges, i, cp);
-        if (code == 2)
+        mid = bs_mid(lo, hi);
+        if (wrange_before(unicode89_priv_width_ranges, mid, cp))
         {
-            return 4;
+            hi = mid;
         }
-        if (code != 0)
+        else
         {
-            return code - 3;
+            if (wrange_after(unicode89_priv_width_ranges, mid, cp))
+            {
+                lo = bs_step(mid);
+            }
+            else
+            {
+                return wrange_type(unicode89_priv_width_ranges, mid);
+            }
         }
     }
     return 4;
@@ -129,8 +157,8 @@ static int word_next(const unsigned char *s, size_t n, unicode89_width_ambig a,
 
 /* Measure the maximal non-whitespace run at s. Stores its byte length in
  *byte_len and its display width in *width. */
-static void word_measure(const unsigned char *s, size_t n, unicode89_width_ambig a,
-                         size_t *byte_len, int *width)
+static void word_measure(const unsigned char *s, size_t n,
+                         unicode89_width_ambig a, size_t *byte_len, int *width)
 {
     size_t i;
     int w;
@@ -175,8 +203,8 @@ static void apply_break(size_t *breaks, size_t cap, size_t i, size_t *break_i,
 }
 
 /* Consume a single whitespace scalar of width cp_disp_width(cp). */
-static void ws_advance(unicode89_cp cp, size_t next, unicode89_width_ambig a, size_t *i,
-                       int *col)
+static void ws_advance(unicode89_cp cp, size_t next, unicode89_width_ambig a,
+                       size_t *i, int *col)
 {
     int w;
 
@@ -189,8 +217,8 @@ static void ws_advance(unicode89_cp cp, size_t next, unicode89_width_ambig a, si
    non-whitespace word. Records a break before an overflowing word. Returns 1
    while input remains, 0 at end of input or on malformed UTF-8. */
 static int wrap_step(const unsigned char *s, size_t n, int max_cols,
-                     unicode89_width_ambig a, size_t *breaks, size_t cap, size_t *i,
-                     size_t *break_i, int *col)
+                     unicode89_width_ambig a, size_t *breaks, size_t cap,
+                     size_t *i, size_t *break_i, int *col)
 {
     size_t next;
     unicode89_status st;
@@ -223,7 +251,7 @@ static int wrap_step(const unsigned char *s, size_t n, int max_cols,
 }
 
 int unicode89_width_wrap(const unsigned char *s, size_t n, int max_cols,
-                   unicode89_width_ambig a, size_t *breaks, size_t cap)
+                         unicode89_width_ambig a, size_t *breaks, size_t cap)
 {
     size_t i;
     size_t break_i;

@@ -31,6 +31,7 @@ void test_id(void);
 void test_props(void);
 void test_casefold(void);
 void test_width(void);
+void test_termwidth(void);
 void test_nfc(void);
 void test_consistency(void);
 void test_status(void);
@@ -44,6 +45,7 @@ int main(void)
     test_props();
     test_casefold();
     test_width();
+    test_termwidth();
     test_nfc();
     test_consistency();
     test_status();

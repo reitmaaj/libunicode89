@@ -24,7 +24,8 @@ static int map_probe(const unicode89_priv_mapping *t, size_t i, unicode89_cp cp)
 }
 
 /* Return the index of cp in the mapping rows, or n when cp has no mapping. */
-static size_t fold_index(const unicode89_priv_mapping *t, size_t n, unicode89_cp cp)
+static size_t fold_index(const unicode89_priv_mapping *t, size_t n,
+                         unicode89_cp cp)
 {
     size_t i;
     int st;
@@ -46,7 +47,8 @@ static size_t fold_index(const unicode89_priv_mapping *t, size_t n, unicode89_cp
 
 /* Advance one scalar at *i. Returns 0 on success with *cp set, 1 on malformed
    input. */
-static int next_cp(const unsigned char *s, size_t n, size_t *i, unicode89_cp *cp)
+static int next_cp(const unsigned char *s, size_t n, size_t *i,
+                   unicode89_cp *cp)
 {
     size_t next;
     unicode89_status st;
@@ -89,7 +91,8 @@ static int seq_len_step(const unicode89_cp *pool, unsigned long off, size_t len,
 }
 
 /* Add the UTF-8 length of the stored sequence for row idx to *total. */
-static void seq_len_add(const unicode89_priv_mapping *t, size_t idx, size_t *total)
+static void seq_len_add(const unicode89_priv_mapping *t, size_t idx,
+                        size_t *total)
 {
     size_t k;
     size_t len;
@@ -107,8 +110,8 @@ static void seq_len_add(const unicode89_priv_mapping *t, size_t idx, size_t *tot
 }
 
 /* Add the folded byte length of cp (identity, or stored at idx) to *total. */
-static void fold_add(const unicode89_priv_mapping *t, size_t tn, unicode89_cp cp,
-                     size_t idx, size_t *total)
+static void fold_add(const unicode89_priv_mapping *t, size_t tn,
+                     unicode89_cp cp, size_t idx, size_t *total)
 {
     if (idx == tn)
     {
@@ -212,8 +215,9 @@ static void seq_enc_add(const unicode89_priv_mapping *t, size_t idx,
 
 /* Write the folded bytes of cp (identity, or stored at idx) into dst at
  *off. */
-static void fold_write_cp(const unicode89_priv_mapping *t, size_t tn, unicode89_cp cp,
-                          size_t idx, unsigned char *dst, size_t *off)
+static void fold_write_cp(const unicode89_priv_mapping *t, size_t tn,
+                          unicode89_cp cp, size_t idx, unsigned char *dst,
+                          size_t *off)
 {
     if (idx == tn)
     {
@@ -245,8 +249,8 @@ static int fold_wr_step(const unicode89_priv_mapping *t, size_t tn,
     return 0;
 }
 
-int unicode89_casefold(int mode, const unsigned char *s, size_t n, unsigned char *dst,
-                 size_t dst_cap)
+int unicode89_casefold(int mode, const unsigned char *s, size_t n,
+                       unsigned char *dst, size_t dst_cap)
 {
     const unicode89_priv_mapping *t;
     size_t tn;

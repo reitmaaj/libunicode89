@@ -8,18 +8,36 @@
 
 /* Probe sorted, non-overlapping ranges. Returns 1 when cp lies in range i,
    2 when cp precedes range i (stop), otherwise 0 (continue). */
-static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp)
-{
-    unicode89_cp tlo;
-    unicode89_cp thi;
 
-    tlo = t[i].lo;
-    if (cp < tlo)
+/* Binary-search helpers over sorted, non-overlapping ranges. */
+static size_t bs_mid(size_t lo, size_t hi)
+{
+    size_t span;
+
+    span = hi - lo;
+    span = span / 2;
+    return lo + span;
+}
+
+static size_t bs_step(size_t mid)
+{
+    return mid + 1;
+}
+
+static int range_before(const unicode89_priv_range *t, size_t i,
+                        unicode89_cp cp)
+{
+    if (cp < t[i].lo)
     {
-        return 2;
+        return 1;
     }
-    thi = t[i].hi;
-    if (cp <= thi)
+    return 0;
+}
+
+static int range_inside(const unicode89_priv_range *t, size_t i,
+                        unicode89_cp cp)
+{
+    if (cp <= t[i].hi)
     {
         return 1;
     }
@@ -28,19 +46,26 @@ static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp)
 
 static int member(const unicode89_priv_range *t, size_t n, unicode89_cp cp)
 {
-    size_t i;
-    int st;
+    size_t lo;
+    size_t hi;
+    size_t mid;
 
-    for (i = 0; i < n; ++i)
+    lo = 0;
+    hi = n;
+    while (lo < hi)
     {
-        st = range_probe(t, i, cp);
-        if (st == 1)
+        mid = bs_mid(lo, hi);
+        if (range_before(t, mid, cp))
         {
-            return 1;
+            hi = mid;
         }
-        if (st == 2)
+        else
         {
-            return 0;
+            if (range_inside(t, mid, cp))
+            {
+                return 1;
+            }
+            lo = bs_step(mid);
         }
     }
     return 0;
@@ -92,43 +117,59 @@ int unicode89_identifier_join_control(unicode89_cp cp)
     return r;
 }
 
-/* Value lookup over sorted, non-overlapping unicode89_priv_prop_range rows. Returns
-   the stored value when cp lies in a row, else dflt. */
-/* Probe one sorted unicode89_priv_prop_range row. Returns 1 when cp lies in row i
-   (writing its value to *out), 2 when cp precedes row i (stop), else 0. */
-static int gc_probe(const unicode89_priv_prop_range *t, size_t i, unicode89_cp cp,
-                    unsigned short *out)
+/* Value lookup over sorted, non-overlapping unicode89_priv_prop_range rows.
+   Returns the stored value when cp lies in a row, else dflt. */
+static int prange_before(const unicode89_priv_prop_range *t, size_t i,
+                         unicode89_cp cp)
 {
     if (cp < t[i].lo)
     {
-        return 2;
+        return 1;
     }
+    return 0;
+}
+
+static int prange_after(const unicode89_priv_prop_range *t, size_t i,
+                        unicode89_cp cp)
+{
     if (cp > t[i].hi)
     {
-        return 0;
+        return 1;
     }
-    *out = t[i].value;
-    return 1;
+    return 0;
+}
+
+static unsigned short prop_at(const unicode89_priv_prop_range *t, size_t i)
+{
+    return t[i].value;
 }
 
 static unsigned short prop_value(const unicode89_priv_prop_range *t, size_t n,
                                  unicode89_cp cp, unsigned short dflt)
 {
-    size_t i;
-    int st;
-    unsigned short found;
+    size_t lo;
+    size_t hi;
+    size_t mid;
 
-    found = dflt;
-    for (i = 0; i < n; ++i)
+    lo = 0;
+    hi = n;
+    while (lo < hi)
     {
-        st = gc_probe(t, i, cp, &found);
-        if (st == 2)
+        mid = bs_mid(lo, hi);
+        if (prange_before(t, mid, cp))
         {
-            return dflt;
+            hi = mid;
         }
-        if (st == 1)
+        else
         {
-            return found;
+            if (prange_after(t, mid, cp))
+            {
+                lo = bs_step(mid);
+            }
+            else
+            {
+                return prop_at(t, mid);
+            }
         }
     }
     return dflt;
@@ -196,6 +237,7 @@ int unicode89_properties_is_emoji_presentation(unicode89_cp cp)
 {
     int r;
 
-    r = in_prop(unicode89_priv_emoji_pres_ranges, unicode89_priv_emoji_pres_count, cp);
+    r = in_prop(unicode89_priv_emoji_pres_ranges,
+                unicode89_priv_emoji_pres_count, cp);
     return r;
 }

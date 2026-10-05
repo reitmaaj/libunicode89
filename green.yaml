@@ -17,3 +17,17 @@ compatibility_paths: []
 pure_functions:
     - unicode89_status_name
     - unicode89_status_message
+    - bs_mid
+    - bs_step
+    - range_before
+    - range_inside
+    - prange_before
+    - prange_after
+    - prop_at
+    - prop_before
+    - prop_after
+    - rrange_before
+    - rrange_inside
+    - wrange_before
+    - wrange_after
+    - wrange_type

@@ -13,6 +13,7 @@ set(UNICODE89_SRCS
     src/unicode89_id.c
     src/unicode89_properties.c
     src/unicode89_width.c
+    src/unicode89_termwidth.c
     src/unicode89_utf8.c
     src/unicode89_grapheme.c
     src/unicode89_normalize.c

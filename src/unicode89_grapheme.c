@@ -40,39 +40,72 @@ typedef struct gc_state
 
 /* ---- Property lookup ----------------------------------------------------- */
 
-static int prop_probe(const unicode89_priv_prop_range *t, size_t i, unicode89_cp cp,
-                      unsigned short *out)
+/* Binary-search helpers over sorted, non-overlapping ranges. */
+static size_t bs_mid(size_t lo, size_t hi)
+{
+    size_t span;
+
+    span = hi - lo;
+    span = span / 2;
+    return lo + span;
+}
+
+static size_t bs_step(size_t mid)
+{
+    return mid + 1;
+}
+
+static int prop_before(const unicode89_priv_prop_range *t, size_t i,
+                       unicode89_cp cp)
 {
     if (cp < t[i].lo)
     {
-        return 2;
+        return 1;
     }
+    return 0;
+}
+
+static int prop_after(const unicode89_priv_prop_range *t, size_t i,
+                      unicode89_cp cp)
+{
     if (cp > t[i].hi)
     {
-        return 0;
+        return 1;
     }
-    *out = t[i].value;
-    return 1;
+    return 0;
+}
+
+static unsigned short prop_at(const unicode89_priv_prop_range *t, size_t i)
+{
+    return t[i].value;
 }
 
 static unsigned short prop_lookup(const unicode89_priv_prop_range *t, size_t n,
                                   unicode89_cp cp, unsigned short dflt)
 {
-    size_t i;
-    int st;
-    unsigned short found;
+    size_t lo;
+    size_t hi;
+    size_t mid;
 
-    found = dflt;
-    for (i = 0; i < n; ++i)
+    lo = 0;
+    hi = n;
+    while (lo < hi)
     {
-        st = prop_probe(t, i, cp, &found);
-        if (st == 2)
+        mid = bs_mid(lo, hi);
+        if (prop_before(t, mid, cp))
         {
-            return dflt;
+            hi = mid;
         }
-        if (st == 1)
+        else
         {
-            return found;
+            if (prop_after(t, mid, cp))
+            {
+                lo = bs_step(mid);
+            }
+            else
+            {
+                return prop_at(t, mid);
+            }
         }
     }
     return dflt;
@@ -82,7 +115,8 @@ static unsigned short gcb_at(unicode89_cp cp)
 {
     unsigned short v;
 
-    v = prop_lookup(unicode89_priv_gcb_ranges, unicode89_priv_gcb_count, cp, GCB_OTHER);
+    v = prop_lookup(unicode89_priv_gcb_ranges, unicode89_priv_gcb_count, cp,
+                    GCB_OTHER);
     return v;
 }
 
@@ -90,16 +124,24 @@ static unsigned short incb_at(unicode89_cp cp)
 {
     unsigned short v;
 
-    v = prop_lookup(unicode89_priv_incb_ranges, unicode89_priv_incb_count, cp, INCB_NONE);
+    v = prop_lookup(unicode89_priv_incb_ranges, unicode89_priv_incb_count, cp,
+                    INCB_NONE);
     return v;
 }
 
-static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp)
+static int rrange_before(const unicode89_priv_range *t, size_t i,
+                         unicode89_cp cp)
 {
     if (cp < t[i].lo)
     {
-        return 2;
+        return 1;
     }
+    return 0;
+}
+
+static int rrange_inside(const unicode89_priv_range *t, size_t i,
+                         unicode89_cp cp)
+{
     if (cp <= t[i].hi)
     {
         return 1;
@@ -107,21 +149,29 @@ static int range_probe(const unicode89_priv_range *t, size_t i, unicode89_cp cp)
     return 0;
 }
 
-static int range_member(const unicode89_priv_range *t, size_t n, unicode89_cp cp)
+static int range_member(const unicode89_priv_range *t, size_t n,
+                        unicode89_cp cp)
 {
-    size_t i;
-    int st;
+    size_t lo;
+    size_t hi;
+    size_t mid;
 
-    for (i = 0; i < n; ++i)
+    lo = 0;
+    hi = n;
+    while (lo < hi)
     {
-        st = range_probe(t, i, cp);
-        if (st == 1)
+        mid = bs_mid(lo, hi);
+        if (rrange_before(t, mid, cp))
         {
-            return 1;
+            hi = mid;
         }
-        if (st == 2)
+        else
         {
-            return 0;
+            if (rrange_inside(t, mid, cp))
+            {
+                return 1;
+            }
+            lo = bs_step(mid);
         }
     }
     return 0;
@@ -131,7 +181,8 @@ static int is_ext_pict(unicode89_cp cp)
 {
     int v;
 
-    v = range_member(unicode89_priv_extpict_ranges, unicode89_priv_extpict_count, cp);
+    v = range_member(unicode89_priv_extpict_ranges,
+                     unicode89_priv_extpict_count, cp);
     return v;
 }
 
@@ -429,8 +480,8 @@ static int fwd_break(unicode89_cp prev, const gc_state *st, unicode89_cp cur)
 }
 
 /* Process one scalar. Returns 0 to continue, 1 at a break, 2 at end. */
-static int scan_step(const unsigned char *s, size_t n, size_t *i, unicode89_cp *prev,
-                     gc_state *state)
+static int scan_step(const unsigned char *s, size_t n, size_t *i,
+                     unicode89_cp *prev, gc_state *state)
 {
     size_t next;
     unicode89_cp cur;
@@ -549,8 +600,8 @@ static int incb_take(size_t *i, size_t q, int *linker, unsigned short cls)
 
 /* One backward GB9c run step. Returns 1 when *i moved, 0 when the run ended
    (with *cp and *q at the scalar that stopped it). */
-static int incb_step(const unsigned char *s, size_t n, size_t *i, unicode89_cp *cp,
-                     size_t *q, int *linker)
+static int incb_step(const unsigned char *s, size_t n, size_t *i,
+                     unicode89_cp *cp, size_t *q, int *linker)
 {
     unicode89_status st;
     unsigned short cls;

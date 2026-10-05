@@ -54,7 +54,8 @@ int unicode89_identifier_id_start(unicode89_cp cp)
     {
         return 0;
     }
-    r = in_ranges(unicode89_priv_id_start_ranges, unicode89_priv_id_start_count, cp);
+    r = in_ranges(unicode89_priv_id_start_ranges, unicode89_priv_id_start_count,
+                  cp);
     return r;
 }
 
@@ -68,6 +69,7 @@ int unicode89_identifier_id_continue(unicode89_cp cp)
     {
         return 0;
     }
-    r = in_ranges(unicode89_priv_id_cont_ranges, unicode89_priv_id_cont_count, cp);
+    r = in_ranges(unicode89_priv_id_cont_ranges, unicode89_priv_id_cont_count,
+                  cp);
     return r;
 }

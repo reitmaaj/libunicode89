@@ -101,7 +101,8 @@ static int decomp_at(const unicode89_priv_mapping *t, size_t i, unicode89_cp cp)
 }
 
 /* Copy scratch[k] = src[k] and return the next index. */
-static size_t decomp_copy(const unicode89_cp *src, unicode89_cp *scratch, size_t k)
+static size_t decomp_copy(const unicode89_cp *src, unicode89_cp *scratch,
+                          size_t k)
 {
     scratch[k] = src[k];
     return k + 1;
@@ -109,7 +110,8 @@ static size_t decomp_copy(const unicode89_cp *src, unicode89_cp *scratch, size_t
 
 /* Append tmp[0..cnt) into w at offset m (or just count when w is null).
    Returns the new length. */
-static size_t append_scalars(unicode89_cp *w, size_t m, const unicode89_cp *tmp, size_t cnt)
+static size_t append_scalars(unicode89_cp *w, size_t m, const unicode89_cp *tmp,
+                             size_t cnt)
 {
     size_t k;
 
@@ -127,8 +129,9 @@ static size_t append_scalars(unicode89_cp *w, size_t m, const unicode89_cp *tmp,
 
 /* Emit the stored decomposition of table entry i into scratch. Returns the
    scalar count, or -1 if scratch is too small. */
-static int decomp_emit(const unicode89_priv_mapping *t, size_t i, const unicode89_cp *pool,
-                       unicode89_cp *scratch, size_t slots)
+static int decomp_emit(const unicode89_priv_mapping *t, size_t i,
+                       const unicode89_cp *pool, unicode89_cp *scratch,
+                       size_t slots)
 {
     size_t len;
     size_t k;
@@ -188,8 +191,8 @@ static int hangul_decomp(unicode89_cp cp, unicode89_cp *scratch, size_t slots)
 
 /* Advance the decomposition scan. Returns 0 once *i is settled (found, or past
    the last possible row meaning identity), else 1 having moved *i onward. */
-static int decomp_scan(const unicode89_priv_mapping *t, size_t n, unicode89_cp cp,
-                       size_t *i, int *found)
+static int decomp_scan(const unicode89_priv_mapping *t, size_t n,
+                       unicode89_cp cp, size_t *i, int *found)
 {
     int eq;
 
@@ -215,7 +218,8 @@ static int decomp_scan(const unicode89_priv_mapping *t, size_t n, unicode89_cp c
 
 /* Return the index of cp in the sorted decomposition table, or n when cp is
    absent (identity decomposition). */
-static size_t decomp_find_index(const unicode89_priv_mapping *t, size_t n, unicode89_cp cp)
+static size_t decomp_find_index(const unicode89_priv_mapping *t, size_t n,
+                                unicode89_cp cp)
 {
     size_t i;
     int found;
@@ -249,7 +253,8 @@ static int identity_decomp(unicode89_cp cp, unicode89_cp *scratch, size_t slots)
 
 /* Fully decompose one scalar into scratch; returns the count written, -1 when
    scratch (slots) is too small. Uses the compatibility table when compat. */
-static int decompose_one(unicode89_cp cp, int compat, unicode89_cp *scratch, size_t slots)
+static int decompose_one(unicode89_cp cp, int compat, unicode89_cp *scratch,
+                         size_t slots)
 {
     const unicode89_priv_mapping *t;
     size_t n;
@@ -468,8 +473,8 @@ static unicode89_cp hangul_pair(unicode89_cp first, unicode89_cp second)
 
 /* Probe the sorted composition table (by first, then second). Returns 0 to
    continue, 1 found, 2 stop (no further row can match). */
-static int comp_probe(const unicode89_priv_comp *t, size_t i, unicode89_cp first,
-                      unicode89_cp second)
+static int comp_probe(const unicode89_priv_comp *t, size_t i,
+                      unicode89_cp first, unicode89_cp second)
 {
     if (t[i].first < first)
     {
@@ -491,7 +496,8 @@ static int comp_probe(const unicode89_priv_comp *t, size_t i, unicode89_cp first
 }
 
 /* Write the stored composite for row i into *result. */
-static void comp_result(const unicode89_priv_comp *t, size_t i, unicode89_cp *result)
+static void comp_result(const unicode89_priv_comp *t, size_t i,
+                        unicode89_cp *result)
 {
     unicode89_cp r;
 
@@ -499,7 +505,8 @@ static void comp_result(const unicode89_priv_comp *t, size_t i, unicode89_cp *re
     *result = r;
 }
 
-static int compose_pair(unicode89_cp first, unicode89_cp second, unicode89_cp *result)
+static int compose_pair(unicode89_cp first, unicode89_cp second,
+                        unicode89_cp *result)
 {
     size_t i;
     int code;
@@ -564,7 +571,8 @@ static struct cst cst_mark(struct cst s, int cls)
     return s;
 }
 
-static struct cst comp_emit(struct cst s, unicode89_cp *w, unicode89_cp ch, int cls)
+static struct cst comp_emit(struct cst s, unicode89_cp *w, unicode89_cp ch,
+                            int cls)
 {
     struct cst s0;
 
@@ -743,8 +751,8 @@ static int form_compose(int mode)
 
 /* Encode the next scalar w[*i] at dst[*off]; advances both. Returns 0 when all
    scalars are written. */
-static int enc_forward(const unicode89_cp *w, size_t m, unsigned char *dst, size_t *i,
-                       size_t *off)
+static int enc_forward(const unicode89_cp *w, size_t m, unsigned char *dst,
+                       size_t *i, size_t *off)
 {
     int len;
     unicode89_cp cp;
@@ -788,7 +796,8 @@ static int mul_overflow(size_t a, size_t b)
     return 0;
 }
 
-int unicode89_normalize_work_bound(const unsigned char *s, size_t n, size_t *cp_bound)
+int unicode89_normalize_work_bound(const unsigned char *s, size_t n,
+                                   size_t *cp_bound)
 {
     int v;
     int mo;
@@ -812,7 +821,7 @@ int unicode89_normalize_work_bound(const unsigned char *s, size_t n, size_t *cp_
 }
 
 int unicode89_normalize_out_bound(const unsigned char *s, size_t n,
-                            size_t *byte_bound)
+                                  size_t *byte_bound)
 {
     int v;
     int mo;
@@ -836,8 +845,8 @@ int unicode89_normalize_out_bound(const unsigned char *s, size_t n,
 }
 
 int unicode89_normalize_ex(int mode, const unsigned char *s, size_t n,
-                     unsigned char *dst, size_t dst_cap, unicode89_cp *work,
-                     size_t work_cap)
+                           unsigned char *dst, size_t dst_cap,
+                           unicode89_cp *work, size_t work_cap)
 {
     size_t m;
     size_t i;
